@@ -10,7 +10,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
   return (
     <Dialog open={open} title="About" onClose={onClose}>
       <div className="flex flex-col items-center gap-3 pt-2 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-canvas">
+        <div className="flex size-12 items-center justify-center bg-canvas">
           <LuFileText className="size-6 text-ink" />
         </div>
         <div>

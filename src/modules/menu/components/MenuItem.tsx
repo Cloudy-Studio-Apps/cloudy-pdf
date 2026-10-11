@@ -16,7 +16,7 @@ export function MenuItem({ item, onSelected }: MenuItemProps) {
         type="button"
         role="menuitem"
         disabled={item.disabled}
-        className="flex h-8 w-full items-center justify-between gap-6 rounded-md px-2.5 text-left text-ink transition-colors hover:bg-hover disabled:pointer-events-none disabled:text-subtle"
+        className="flex h-8 w-full items-center justify-between gap-6 px-2.5 text-left text-ink transition-colors hover:bg-hover disabled:pointer-events-none disabled:text-subtle"
         onClick={select}
       >
         <span>{item.label}</span>

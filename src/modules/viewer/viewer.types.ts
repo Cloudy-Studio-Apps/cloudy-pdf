@@ -45,11 +45,14 @@ export type PdfLoadState =
 
 export interface DocumentViewerProps {
   document: OpenedDocument;
+  /** False while the viewer's tab is in the background; disables its keyboard shortcuts. */
+  isActive: boolean;
 }
 
 export interface ViewerCanvasProps {
   pdf: PdfDocument;
   pageSizes: PageSize[];
+  isActive: boolean;
 }
 
 export interface PageListProps {

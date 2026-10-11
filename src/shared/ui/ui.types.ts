@@ -4,9 +4,12 @@ import type { IconType } from "react-icons";
 
 export type ButtonVariant = "primary" | "ghost";
 
+export type ButtonSize = "md" | "lg";
+
 /** Extends native button attributes, so onClick, disabled, etc. pass straight through. */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   /** Optional leading icon (any react-icons component). */
   icon?: IconType;
 }

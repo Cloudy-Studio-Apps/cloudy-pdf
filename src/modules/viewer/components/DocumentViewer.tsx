@@ -10,12 +10,12 @@ import type { DocumentViewerProps } from "../viewer.types";
  * Split from ViewerCanvas on purpose: ViewerCanvas only mounts once the PDF
  * is ready, so its hooks never have to handle a "no document yet" case.
  */
-export function DocumentViewer({ document }: DocumentViewerProps) {
+export function DocumentViewer({ document, isActive }: DocumentViewerProps) {
   const state = usePdfDocument(document.data);
 
   if (state.status === "loading") return <ViewerMessage title="Loading document…" />;
   if (state.status === "error") {
     return <ViewerMessage title="This PDF could not be opened" description={state.error} />;
   }
-  return <ViewerCanvas pdf={state.pdf} pageSizes={state.pageSizes} />;
+  return <ViewerCanvas pdf={state.pdf} pageSizes={state.pageSizes} isActive={isActive} />;
 }

@@ -10,7 +10,12 @@ import type { AppActions } from "../app.types";
  * entries live here, in the app layer, because only the app knows its actions.
  * Memoized so the menu bar doesn't re-render unless an action changes.
  */
-export function useAppMenus({ openDocument, showAbout }: AppActions): MenuDefinition[] {
+export function useAppMenus({
+  openDocument,
+  closeActiveTab,
+  showAbout,
+  canCloseTab,
+}: AppActions): MenuDefinition[] {
   return useMemo(
     () => [
       {
@@ -18,6 +23,13 @@ export function useAppMenus({ openDocument, showAbout }: AppActions): MenuDefini
         label: "File",
         items: [
           { id: "open", label: "Open…", shortcut: APP_SHORTCUTS.open, onSelect: openDocument },
+          {
+            id: "close-tab",
+            label: "Close Tab",
+            shortcut: APP_SHORTCUTS.closeTab,
+            disabled: !canCloseTab,
+            onSelect: closeActiveTab,
+          },
         ],
       },
       {
@@ -26,6 +38,6 @@ export function useAppMenus({ openDocument, showAbout }: AppActions): MenuDefini
         items: [{ id: "about", label: "About", onSelect: showAbout }],
       },
     ],
-    [openDocument, showAbout],
+    [openDocument, closeActiveTab, showAbout, canCloseTab],
   );
 }

@@ -40,7 +40,7 @@ export function PageNavigator({ navigation }: PageNavigatorProps) {
           onBlur={() => setDraft(String(currentPage))}
           // Select everything on focus, so you can type a new number right away.
           onFocus={(event) => event.target.select()}
-          className="h-6 w-9 rounded-md border border-border text-center tabular-nums text-ink outline-none focus:border-accent"
+          className="h-6 w-9 border border-border text-center tabular-nums text-ink outline-none focus:border-accent"
         />
         <span className="tabular-nums">/ {pageCount}</span>
       </form>

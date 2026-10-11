@@ -13,8 +13,12 @@ pnpm tauri dev
 
 ```
 src/
-├── app/                 # Shell: composes modules, app menus and shortcuts
+├── app/                 # Shell: composes modules, app menus, shortcuts, tab → page mapping
 ├── modules/
+│   ├── tabs/            # Tab state (pure utils + useTabs), TabBar, TabPanel
+│   ├── home/            # Home tab: welcome section + Recent files table
+│   ├── history/         # Recent files (pure utils, store-plugin persistence, useHistory)
+│   ├── tools/           # Tools tab page (fixed)
 │   ├── menu/            # Generic menu bar (MenuBar → Menu → MenuItem)
 │   ├── document/        # Picking and reading files through Tauri
 │   ├── pdf/             # pdf.js wrapper (load, page sizes, render)
@@ -33,6 +37,29 @@ Conventions:
 - Each module keeps its types in `<module>.types.ts` and its constants in `<module>.constants.ts`.
 - Side effects (Tauri, pdf.js) live in `services/`, and React state lives in `hooks/`.
 - Components only compose hooks and render markup.
+
+## Recent files
+
+Every opened PDF is recorded in `history.json` (Tauri store plugin, app data folder) with its
+name, path, size and last-opened time; only metadata, never the file itself. The list keeps the
+20 most recent files, newest first.
+
+Reopening from Recent works after a restart because `tauri-plugin-persisted-scope` remembers which
+files were granted read access. If a file was moved or deleted, opening it shows an error on Home;
+remove it from the list with the × on its row.
+
+## Tabs
+
+Home and Tools are fixed tabs. Every opened PDF gets its own closable tab; opening a file
+that's already open focuses its tab. Inactive tabs stay mounted (hidden), so each keeps
+its scroll position and zoom.
+
+| Shortcut | Action |
+| --- | --- |
+| Ctrl+O | Open a PDF in a new tab |
+| Ctrl+W / middle-click | Close the current / clicked document tab |
+| Ctrl+Tab, Ctrl+Shift+Tab | Next / previous tab |
+| Ctrl+=, Ctrl+−, Ctrl+0 | Zoom in / out / fit width |
 
 ## Default PDF reader
 

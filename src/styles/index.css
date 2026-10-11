@@ -17,6 +17,33 @@
   --color-muted: #71717a; /* secondary text, idle icons */
   --color-subtle: #a1a1aa; /* hints, disabled text */
   --color-accent: #2563eb; /* focus rings */
+
+  /* Illustration animations → `animate-float`, `animate-blink`. */
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-blink: blink 5s ease-in-out infinite;
+
+  /* Gentle up-and-down bob, like floating on water. */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  /* Eyes closed only for a brief moment (92%–96%) of each 5s cycle. */
+  @keyframes blink {
+    0%,
+    92%,
+    100% {
+      transform: scaleY(1);
+    }
+    94% {
+      transform: scaleY(0.1);
+    }
+  }
 }
 
 @layer base {

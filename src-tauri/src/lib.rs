@@ -28,6 +28,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         // File reading from the frontend (limited by capabilities/default.json + scope).
         .plugin(tauri_plugin_fs::init())
+        // Remembers which files were granted to the fs scope across restarts, so files
+        // from the "Recent" history can be reopened later. Must come after the fs plugin.
+        .plugin(tauri_plugin_persisted_scope::init())
+        // Small JSON key-value file in the app data folder (stores the recent files history).
+        .plugin(tauri_plugin_store::Builder::default().build())
         // Shared state: the queue of files the OS asked us to open.
         .manage(PendingFiles::default())
         // Rust functions callable from the frontend with `invoke("…")`.

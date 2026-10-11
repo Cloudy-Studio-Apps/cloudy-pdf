@@ -19,7 +19,7 @@ export function Dialog({ open, title, onClose, children }: DialogProps) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-80 rounded-xl border border-border bg-surface shadow-xl shadow-ink/5"
+        className="w-80 border border-border bg-surface shadow-xl shadow-ink/5"
         // Presses inside the card must not reach the backdrop, or it would close the dialog.
         onPointerDown={(event) => event.stopPropagation()}
       >
