@@ -9,6 +9,7 @@
     "core:default",
     "dialog:allow-open",
     "fs:allow-read-file",
-    "store:default"
+    "store:default",
+    "opener:allow-reveal-item-in-dir"
   ]
 }

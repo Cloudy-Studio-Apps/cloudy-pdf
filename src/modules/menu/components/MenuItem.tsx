@@ -1,10 +1,13 @@
 import { formatShortcut } from "@/shared/keyboard/keyboard.utils";
+import { cn } from "@/shared/utils/class-names.utils";
 import type { MenuItemProps } from "../menu.types";
 
-/** A single row in a dropdown: label on the left, shortcut hint on the right. */
+/** A single row in a menu: optional icon and label on the left, shortcut hint on the right. */
 export function MenuItem({ item, onSelected }: MenuItemProps) {
+  const { icon: Icon } = item;
+
   const select = () => {
-    // Close the dropdown first, so a dialog opened by the action isn't covered by the menu.
+    // Close the menu first, so a dialog opened by the action isn't covered by it.
     onSelected();
     item.onSelect();
   };
@@ -16,11 +19,15 @@ export function MenuItem({ item, onSelected }: MenuItemProps) {
         type="button"
         role="menuitem"
         disabled={item.disabled}
-        className="flex h-8 w-full items-center justify-between gap-6 px-2.5 text-left text-ink transition-colors hover:bg-hover disabled:pointer-events-none disabled:text-subtle"
+        className={cn(
+          "flex h-8 w-full items-center gap-2.5 px-2.5 text-left transition-colors disabled:pointer-events-none disabled:text-subtle",
+          item.danger ? "text-red-600 hover:bg-red-50" : "text-ink hover:bg-hover",
+        )}
         onClick={select}
       >
-        <span>{item.label}</span>
-        {item.shortcut && <kbd className="font-sans text-xs text-subtle">{formatShortcut(item.shortcut)}</kbd>}
+        {Icon && <Icon className="size-4 shrink-0 opacity-80" />}
+        <span className="flex-1">{item.label}</span>
+        {item.shortcut && <kbd className="pl-6 font-sans text-xs text-subtle">{formatShortcut(item.shortcut)}</kbd>}
       </button>
     </li>
   );

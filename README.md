@@ -19,7 +19,8 @@ src/
 │   ├── home/            # Home tab: welcome section + Recent files table
 │   ├── history/         # Recent files (pure utils, store-plugin persistence, useHistory)
 │   ├── tools/           # Tools tab page (fixed)
-│   ├── menu/            # Generic menu bar (MenuBar → Menu → MenuItem)
+│   ├── menu/            # Generic menus: menu bar, right-click ContextMenu, shared MenuList
+│   ├── system/          # OS hand-offs: show in file manager, "Open with…" 
 │   ├── document/        # Picking and reading files through Tauri
 │   ├── pdf/             # pdf.js wrapper (load, page sizes, render)
 │   ├── viewer/          # Continuous-scroll viewer, zoom, page navigation
@@ -47,6 +48,11 @@ name, path, size and last-opened time; only metadata, never the file itself. The
 Reopening from Recent works after a restart because `tauri-plugin-persisted-scope` remembers which
 files were granted read access. If a file was moved or deleted, opening it shows an error on Home;
 remove it from the list with the × on its row.
+
+Right-click (or press and hold on touch screens) a recent file for: **Open**, **Show in file manager**, **Open with…** and
+**Remove from history**. On Linux, "Show in file manager" uses the `FileManager1` D-Bus interface
+(via `tauri-plugin-opener`) and "Open with…" uses the XDG Desktop Portal app chooser
+(`src-tauri/src/open_with.rs`), so the dialog is the desktop's own. Both are desktop-only.
 
 ## Tabs
 

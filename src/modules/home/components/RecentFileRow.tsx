@@ -1,4 +1,5 @@
 import { LuFileText, LuX } from "react-icons/lu";
+import { useLongPress } from "@/shared/hooks/useLongPress";
 import { IconButton } from "@/shared/ui/IconButton";
 import { cn } from "@/shared/utils/class-names.utils";
 import { formatBytes, formatRelativeTime } from "@/shared/utils/format.utils";
@@ -9,10 +10,26 @@ import type { RecentFileRowProps } from "../home.types";
 /**
  * One recent file. The row is a button that reopens the file; the remove
  * button sits beside it (not inside), because buttons can't be nested in HTML.
+ * Right-click (mouse) or press-and-hold (touch) opens the context menu,
+ * which is handled by RecentFiles.
  */
-export function RecentFileRow({ entry, onOpen, onRemove }: RecentFileRowProps) {
+export function RecentFileRow({
+  entry,
+  isMenuOpen,
+  onOpen,
+  onRemove,
+  onContextMenu,
+  onLongPress,
+}: RecentFileRowProps) {
+  const longPress = useLongPress((point) => onLongPress(point, entry));
+
   return (
-    <li role="row" className="group flex items-center transition-colors hover:bg-hover">
+    <li
+      role="row"
+      className={cn("group flex items-center transition-colors hover:bg-hover", isMenuOpen && "bg-hover")}
+      onContextMenu={(event) => onContextMenu(event, entry)}
+      {...longPress}
+    >
       <button
         type="button"
         // Full path as tooltip, since the table only shows the folder name.

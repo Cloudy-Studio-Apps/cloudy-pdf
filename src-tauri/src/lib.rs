@@ -1,6 +1,7 @@
 //! Tauri backend: creates the native window that hosts the React frontend
 //! and registers the plugins/commands the frontend is allowed to use.
 
+mod open_with;
 mod opened_files;
 #[cfg(desktop)]
 mod window;
@@ -33,10 +34,15 @@ pub fn run() {
         .plugin(tauri_plugin_persisted_scope::init())
         // Small JSON key-value file in the app data folder (stores the recent files history).
         .plugin(tauri_plugin_store::Builder::default().build())
+        // "Show in file manager" (revealItemInDir) for files in Recent.
+        .plugin(tauri_plugin_opener::init())
         // Shared state: the queue of files the OS asked us to open.
         .manage(PendingFiles::default())
         // Rust functions callable from the frontend with `invoke("…")`.
-        .invoke_handler(tauri::generate_handler![opened_files::take_pending_files])
+        .invoke_handler(tauri::generate_handler![
+            opened_files::take_pending_files,
+            open_with::open_with
+        ])
         .setup(|_app| {
             // Desktop: a PDF opened from the file manager arrives as a launch argument
             // (`pdf-tormentosa /path/file.pdf`). Queue it so the frontend opens it.

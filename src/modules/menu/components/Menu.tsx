@@ -1,5 +1,5 @@
 import { cn } from "@/shared/utils/class-names.utils";
-import { MenuItem } from "./MenuItem";
+import { MenuList } from "./MenuList";
 import type { MenuProps } from "../menu.types";
 
 /** One top-level menu: the title button plus its dropdown when open. Stateless; MenuBar decides. */
@@ -22,14 +22,7 @@ export function Menu({ menu, isOpen, onToggle, onHover, onClose }: MenuProps) {
       </button>
 
       {isOpen && (
-        <ul
-          role="menu"
-          className="absolute top-full left-0 z-40 mt-1 min-w-52 border border-border bg-surface p-1 shadow-lg shadow-ink/5"
-        >
-          {menu.items.map((item) => (
-            <MenuItem key={item.id} item={item} onSelected={onClose} />
-          ))}
-        </ul>
+        <MenuList entries={menu.items} onSelected={onClose} className="absolute top-full left-0 mt-1" />
       )}
     </div>
   );

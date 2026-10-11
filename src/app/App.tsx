@@ -3,6 +3,7 @@
  *
  * It owns no business logic: it only wires modules together —
  * tabs (`tabs`), document opening (`document`), recent files (`history`),
+ * OS actions like "Open with…" (`system`),
  * the pages shown inside tabs (`home`, `tools`, `viewer`), the menu bar (`menu`)
  * and About (`about`).
  */
@@ -12,6 +13,7 @@ import type { OpenedDocument } from "@/modules/document/document.types";
 import { useOpenDocument } from "@/modules/document/hooks/useOpenDocument";
 import { useOpenedFiles } from "@/modules/document/hooks/useOpenedFiles";
 import { useHistory } from "@/modules/history/hooks/useHistory";
+import { useSystemActions } from "@/modules/system/hooks/useSystemActions";
 import { toHistoryEntry } from "@/modules/history/history.utils";
 import { TabBar } from "@/modules/tabs/components/TabBar";
 import { TabPanel } from "@/modules/tabs/components/TabPanel";
@@ -28,6 +30,7 @@ import type { AppActions } from "./app.types";
 export function App() {
   const tabs = useTabs();
   const history = useHistory();
+  const system = useSystemActions();
   const [isAboutOpen, setAboutOpen] = useState(false);
 
   // Every successfully read file becomes (or focuses) a tab and moves to the top of Recent.
@@ -61,7 +64,7 @@ export function App() {
   };
   const menus = useAppMenus(actions);
   useAppShortcuts(actions);
-  const home = useHomePage(opener, history, openDocument);
+  const home = useHomePage(opener, history, system, openDocument);
 
   return (
     <div className="flex h-full flex-col">

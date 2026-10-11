@@ -25,6 +25,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-store = "2"
 tauri-plugin-persisted-scope = "2"
+tauri-plugin-opener = "2"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
@@ -37,3 +38,8 @@ strip = true
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = "2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# async-io backend (not tokio): with tokio, zbus switches its blocking API to a private
+# tokio runtime, which panics when tauri-plugin-opener calls it from an async command.
+ashpd = { version = "0.13.13", default-features = false, features = ["async-io", "open_uri"] }
