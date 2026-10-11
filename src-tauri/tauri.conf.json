@@ -32,6 +32,27 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "category": "Productivity",
+    "shortDescription": "A minimalist PDF reader",
+    "fileAssociations": [
+      {
+        "ext": [
+          "pdf"
+        ],
+        "mimeType": "application/pdf",
+        "name": "PDF Document",
+        "description": "PDF Document",
+        "role": "Viewer"
+      }
+    ],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "linux/pdf-tormentosa.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "linux/pdf-tormentosa.desktop"
+      }
+    }
   }
 }

@@ -3,6 +3,7 @@ import { Dialog } from "@/shared/ui/Dialog";
 import { useAppInfo } from "../hooks/useAppInfo";
 import type { AboutDialogProps } from "../about.types";
 
+/** Help ▸ About: app icon, name and version. */
 export function AboutDialog({ open, onClose }: AboutDialogProps) {
   const info = useAppInfo();
 
@@ -13,6 +14,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           <LuFileText className="size-6 text-ink" />
         </div>
         <div>
+          {/* Fallbacks cover the brief moment before Tauri answers. */}
           <p className="text-[15px] font-semibold">{info?.name ?? "PDF Tormentosa"}</p>
           <p className="text-muted">Version {info?.version ?? "—"}</p>
         </div>

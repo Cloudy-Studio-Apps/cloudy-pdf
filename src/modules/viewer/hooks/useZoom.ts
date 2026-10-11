@@ -3,18 +3,30 @@ import { clamp } from "@/shared/utils/math.utils";
 import { MAX_ZOOM, MIN_ZOOM, PAGE_GUTTER, ZOOM_STEPS } from "../viewer.constants";
 import type { ZoomControl, ZoomState } from "../viewer.types";
 
+// The next zoom step above / below the current scale. The 0.001 tolerance avoids
+// floating-point issues (e.g. 1.2500000001 not counting as 1.25).
+// Fit-width produces arbitrary scales like 1.37, so zooming in from there goes to 1.5.
 const nextStep = (scale: number) => ZOOM_STEPS.find((step) => step > scale + 0.001) ?? MAX_ZOOM;
 const previousStep = (scale: number) =>
   [...ZOOM_STEPS].reverse().find((step) => step < scale - 0.001) ?? MIN_ZOOM;
 
+/**
+ * Zoom state for the viewer.
+ * @param pageWidth widest page at 100%, in px
+ * @param viewportWidth current width of the scroll area, in px
+ */
 export function useZoom(pageWidth: number, viewportWidth: number): ZoomControl {
+  // Starts in fit-width, the most comfortable default for reading.
   const [state, setState] = useState<ZoomState>({ mode: "fit-width", scale: 1 });
 
+  // In fit-width mode the scale is derived, not stored: it's recomputed
+  // whenever the window resizes, so pages always fill the width.
   const scale = useMemo(() => {
     if (state.mode === "custom" || !pageWidth || !viewportWidth) return state.scale;
     return clamp((viewportWidth - PAGE_GUTTER * 2) / pageWidth, MIN_ZOOM, MAX_ZOOM);
   }, [state, pageWidth, viewportWidth]);
 
+  // Any manual zoom leaves fit-width mode and freezes the chosen scale.
   const zoomIn = useCallback(() => setState({ mode: "custom", scale: nextStep(scale) }), [scale]);
   const zoomOut = useCallback(() => setState({ mode: "custom", scale: previousStep(scale) }), [scale]);
   const fitWidth = useCallback(() => setState((current) => ({ ...current, mode: "fit-width" })), []);

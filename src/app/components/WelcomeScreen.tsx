@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/Button";
 import { APP_SHORTCUTS } from "../app.constants";
 import type { WelcomeScreenProps } from "../app.types";
 
+/** Empty state shown when no document is open. */
 export function WelcomeScreen({ onOpen, isOpening, error }: WelcomeScreenProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
@@ -14,6 +15,7 @@ export function WelcomeScreen({ onOpen, isOpening, error }: WelcomeScreenProps) 
         <h1 className="text-[15px] font-semibold">No document open</h1>
         <p className="text-muted">
           Open a PDF to start reading, or press{" "}
+          {/* Rendered from the same constant as the real shortcut ("Ctrl+O" / "⌘O"). */}
           <kbd className="font-sans text-ink">{formatShortcut(APP_SHORTCUTS.open)}</kbd>
         </p>
       </div>

@@ -1,13 +1,16 @@
 import { formatShortcut } from "@/shared/keyboard/keyboard.utils";
 import type { MenuItemProps } from "../menu.types";
 
+/** A single row in a dropdown: label on the left, shortcut hint on the right. */
 export function MenuItem({ item, onSelected }: MenuItemProps) {
   const select = () => {
+    // Close the dropdown first, so a dialog opened by the action isn't covered by the menu.
     onSelected();
     item.onSelect();
   };
 
   return (
+    // role="none" removes the <li> list semantics; the button inside is the menu item.
     <li role="none">
       <button
         type="button"

@@ -33,3 +33,17 @@ Conventions:
 - Each module keeps its types in `<module>.types.ts` and its constants in `<module>.constants.ts`.
 - Side effects (Tauri, pdf.js) live in `services/`, and React state lives in `hooks/`.
 - Components only compose hooks and render markup.
+
+## Default PDF reader
+
+The app registers itself as a handler for `application/pdf`:
+
+- **Linux:** the `.deb` / `.rpm` packages install a `.desktop` file (template in `src-tauri/linux/`)
+  with `MimeType=application/pdf` and `Exec=… %F`. Set it as the default app with
+  `xdg-mime default "PDF Tormentosa.desktop" application/pdf` or from your desktop's settings.
+  If the app is already running, opening another PDF reuses that window (single-instance plugin).
+- **Android:** `bundle.fileAssociations` adds an `ACTION_VIEW` intent filter for `application/pdf`,
+  so the app shows up in "Open with…". Files arrive as `content://` URIs.
+
+Flow: the OS hands over a file → `src-tauri/src/opened_files.rs` queues it and emits
+`opened-files://pending` → the frontend drains the queue (`useOpenedFiles`) and opens the latest file.

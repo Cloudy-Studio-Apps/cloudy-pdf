@@ -1,7 +1,12 @@
 import type { KeyboardShortcut } from "./keyboard.types";
 
+// Detected once: decides whether "mod" means Cmd (macOS) or Ctrl (everything else).
 const isMac = navigator.userAgent.includes("Mac");
 
+/**
+ * True when the event is exactly this shortcut.
+ * Modifiers must match exactly, so Ctrl+O does not also fire on Ctrl+Shift+O.
+ */
 export function matchesShortcut(event: KeyboardEvent, shortcut: KeyboardShortcut): boolean {
   const modPressed = isMac ? event.metaKey : event.ctrlKey;
   return (
@@ -11,6 +16,7 @@ export function matchesShortcut(event: KeyboardEvent, shortcut: KeyboardShortcut
   );
 }
 
+/** Human-readable label for menus and hints: "Ctrl+O" on Linux, "⌘O" on macOS. */
 export function formatShortcut(shortcut: KeyboardShortcut): string {
   const parts: string[] = [];
   if (shortcut.mod) parts.push(isMac ? "⌘" : "Ctrl");

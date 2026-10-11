@@ -1,6 +1,7 @@
 import { cn } from "@/shared/utils/class-names.utils";
 import type { IconButtonProps } from "./ui.types";
 
+/** Square icon-only button used in toolbars and dialogs. `label` becomes the tooltip and aria-label. */
 export function IconButton({ icon: Icon, label, className, ...props }: IconButtonProps) {
   return (
     <button

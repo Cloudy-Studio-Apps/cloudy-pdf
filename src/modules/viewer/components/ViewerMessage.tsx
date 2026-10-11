@@ -1,5 +1,6 @@
 import type { ViewerMessageProps } from "../viewer.types";
 
+/** Centered status text for the viewer (loading, errors). */
 export function ViewerMessage({ title, description }: ViewerMessageProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-1 text-center">

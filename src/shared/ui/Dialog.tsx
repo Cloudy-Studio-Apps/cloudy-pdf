@@ -3,7 +3,12 @@ import { useKeyboardShortcuts } from "@/shared/keyboard/useKeyboardShortcuts";
 import { IconButton } from "./IconButton";
 import type { DialogProps } from "./ui.types";
 
+/**
+ * Minimal modal dialog: dimmed backdrop, centered card, closes on
+ * Escape, the X button, or a press on the backdrop.
+ */
 export function Dialog({ open, title, onClose, children }: DialogProps) {
+  // Escape only does something while the dialog is open.
   useKeyboardShortcuts(open ? [{ shortcut: { key: "Escape" }, handler: onClose }] : []);
 
   if (!open) return null;
@@ -15,6 +20,7 @@ export function Dialog({ open, title, onClose, children }: DialogProps) {
         aria-modal="true"
         aria-label={title}
         className="w-80 rounded-xl border border-border bg-surface shadow-xl shadow-ink/5"
+        // Presses inside the card must not reach the backdrop, or it would close the dialog.
         onPointerDown={(event) => event.stopPropagation()}
       >
         <header className="flex items-center justify-between px-4 pt-3">

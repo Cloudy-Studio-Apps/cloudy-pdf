@@ -2,8 +2,10 @@ import { cn } from "@/shared/utils/class-names.utils";
 import { MenuItem } from "./MenuItem";
 import type { MenuProps } from "../menu.types";
 
+/** One top-level menu: the title button plus its dropdown when open. Stateless; MenuBar decides. */
 export function Menu({ menu, isOpen, onToggle, onHover, onClose }: MenuProps) {
   return (
+    // `relative` anchors the absolutely positioned dropdown under this title.
     <div className="relative">
       <button
         type="button"
