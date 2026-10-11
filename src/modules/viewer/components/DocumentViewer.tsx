@@ -11,11 +11,11 @@ import type { DocumentViewerProps } from "../viewer.types";
  * is ready, so its hooks never have to handle a "no document yet" case.
  */
 export function DocumentViewer({ document, isActive }: DocumentViewerProps) {
-  const state = usePdfDocument(document.data);
+  const state = usePdfDocument(document.path);
 
   if (state.status === "loading") return <ViewerMessage title="Loading document…" />;
   if (state.status === "error") {
     return <ViewerMessage title="This PDF could not be opened" description={state.error} />;
   }
-  return <ViewerCanvas pdf={state.pdf} pageSizes={state.pageSizes} isActive={isActive} />;
+  return <ViewerCanvas pdf={state.pdf} defaultPageSize={state.defaultPageSize} isActive={isActive} />;
 }

@@ -32,3 +32,6 @@ export const WHEEL_ZOOM_STEP = 50;
 
 /** Pixel size of one "line" when the wheel reports lines (Firefox-style deltaMode 1). */
 export const WHEEL_LINE_HEIGHT = 16;
+
+/** Every page element carries `data-page-number` (see PdfPage); this finds them without a ref per page. */
+export const PAGE_SELECTOR = "[data-page-number]";

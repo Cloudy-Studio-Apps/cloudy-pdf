@@ -20,12 +20,21 @@ export interface RenderPageOptions {
   canvas: HTMLCanvasElement;
   /** Zoom factor: 1 = 100%. */
   scale: number;
+  /** Called with the page's real size at 100%, once known, before it is drawn. */
+  onPageSize?: (size: PageSize) => void;
 }
 
 /** A running page render that can be cancelled (e.g. the page scrolled away or zoom changed). */
 export interface RenderJob {
   promise: Promise<void>;
   cancel: () => void;
+}
+
+/** A document opened on the Rust side, whose bytes are read on demand (`open_document`). */
+export interface PdfSource {
+  id: number;
+  /** File size in bytes. */
+  size: number;
 }
 
 /** A document being loaded; `destroy` frees the worker memory, even mid-load. */

@@ -1,7 +1,13 @@
+import { lazy, Suspense } from "react";
 import { HomePage } from "@/modules/home/components/HomePage";
 import { ToolsPage } from "@/modules/tools/components/ToolsPage";
-import { DocumentViewer } from "@/modules/viewer/components/DocumentViewer";
 import type { TabContentProps } from "../app.types";
+
+// Loaded on first use: the viewer pulls in pdf.js, most of the bundle, which the
+// Home page doesn't need. The app shows sooner, especially on Android.
+const DocumentViewer = lazy(() =>
+  import("@/modules/viewer/components/DocumentViewer").then((module) => ({ default: module.DocumentViewer })),
+);
 
 /**
  * Maps a tab to its page. Lives in the app layer because it connects modules
@@ -14,6 +20,10 @@ export function TabContent({ tab, isActive, home }: TabContentProps) {
     case "tools":
       return <ToolsPage />;
     case "document":
-      return <DocumentViewer document={tab.document} isActive={isActive} />;
+      return (
+        <Suspense>
+          <DocumentViewer document={tab.document} isActive={isActive} />
+        </Suspense>
+      );
   }
 }

@@ -4,7 +4,8 @@
  * are easy to read and test in isolation. useTabs just calls these.
  */
 import type { OpenedDocument } from "@/modules/document/document.types";
-import type { DocumentTab, Tab, TabDirection, TabsState } from "./tabs.types";
+import { INITIAL_TABS_STATE } from "./tabs.constants";
+import type { DocumentTab, Tab, TabDirection, TabsSession, TabsState } from "./tabs.types";
 
 /** Only document tabs can be closed; Home and Tools are permanent. */
 export function isClosable(tab: Tab): tab is DocumentTab {
@@ -57,4 +58,27 @@ export function cycleTab(state: TabsState, direction: TabDirection): TabsState {
 /** Focuses a tab, ignoring unknown ids. */
 export function activateTab(state: TabsState, tabId: string): TabsState {
   return state.tabs.some((tab) => tab.id === tabId) ? { ...state, activeId: tabId } : state;
+}
+
+/** The part of the tab state worth keeping across a reload. */
+export function toTabsSession(tabs: Tab[], activeTab: Tab): TabsSession {
+  return {
+    documents: tabs.filter(isClosable).map((tab) => tab.document.path),
+    active: isClosable(activeTab) ? activeTab.document.path : activeTab.id,
+  };
+}
+
+/**
+ * Reopens a saved session's documents and focuses its active tab.
+ *
+ * Documents are re-read asynchronously, so something else may have happened in
+ * the meantime (e.g. the OS handed over a file). If focus already moved away from
+ * the initial tab, it stays there: the newest action wins over the old session.
+ */
+export function restoreTabs(state: TabsState, documents: OpenedDocument[], active: string): TabsState {
+  const restored = documents.reduce(openDocumentTab, state);
+  if (state.activeId !== INITIAL_TABS_STATE.activeId) return { ...restored, activeId: state.activeId };
+
+  const target = restored.tabs.find((tab) => (isClosable(tab) ? tab.document.path : tab.id) === active);
+  return { ...restored, activeId: target?.id ?? state.activeId };
 }

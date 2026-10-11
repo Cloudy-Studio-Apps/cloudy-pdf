@@ -40,20 +40,20 @@ There is no linter and no test suite yet. `pnpm build` fails if a Tauri npm plug
 - Modules don't import each other's internals beyond types. When a module needs something from the app layer, it's passed as props, e.g. HomePage receives `openShortcut`.
 - `src/shared/` holds generic UI primitives, DOM hooks, keyboard handling (`useKeyboardShortcuts`, the only way shortcuts are registered) and utils.
 
-**Opening a document.** `document/useOpenDocument` reads bytes via `@tauri-apps/plugin-fs` and calls `onOpened(doc)`. App then:
+**Opening a document.** `document/useOpenDocument` checks the file through the Rust `document_info` command (opens it and returns its size, reads nothing) and calls `onOpened(doc)`. `OpenedDocument` carries the path and size, never the bytes. App then:
 - opens or focuses a tab (`tabs`); the same path focuses the existing tab;
 - records the file in `history`.
 
 Errors switch to the Home tab, which displays them.
 
-**Tabs.** Home and Tools are fixed tabs, and document tabs can be closed. All tab panels stay mounted. Inactive ones use `invisible` + `inert` (not `display:none`) so the viewer keeps its scroll position and its fit-width measurement. Hooks with global effects must therefore be gated by `isActive`; for example, viewer zoom shortcuts only work on the active tab.
+**Tabs.** Home and Tools are fixed tabs, and document tabs can be closed. All tab panels stay mounted. Inactive ones use `invisible` + `inert` (not `display:none`) so the viewer keeps its scroll position and its fit-width measurement. Hooks with global effects must therefore be gated by `isActive`; for example, viewer zoom shortcuts only work on the active tab. Open document tabs (their paths and the active tab) are saved to `sessionStorage` and reopened after a page reload by `app/hooks/useTabsSession`; restoring doesn't add entries to Recent. This matters on Android: switching to another app to "Open with…" puts ours in the background, which drops the Vite dev connection, and Vite's client then always reloads the page.
 
-**Viewer.** `pdf/pdf.service.ts` is the only code that imports pdf.js.
+**Viewer.** `pdf/pdf.service.ts` is the only code that imports pdf.js. The viewer is lazy-loaded by `TabContent`, so pdf.js isn't in the startup bundle.
 - The worker is set up via a Vite `?url` import.
-- `loadPdf` passes a copy of the buffer, because pdf.js transfers it to its worker and empties the original.
-- `renderPage` is cancellable and sizes the canvas for devicePixelRatio.
-- `getPageSizes` is measured up front so placeholders have the right size.
-- In the viewer, `PdfPage` only mounts a canvas while near the viewport (`useInView` + `RENDER_MARGIN`). Pages carry `data-page-number`, which `usePageNavigation` relies on. `useScrollAnchor` keeps the scroll position stable across zoom changes (top-left by default, the pointer for Ctrl+wheel via `useWheelZoom`, a non-passive listener so the webview itself never zooms).
+- **Bytes are read on demand by Rust.** `src-tauri/src/document_source.rs` opens the file (`open_document`, through the fs plugin so Android `content://` works) and serves byte ranges (`read_document_range`, raw `ipc::Response`, positioned reads in `spawn_blocking`). `loadPdf` feeds them to pdf.js through a `PDFDataRangeTransport` with `disableAutoFetch`, so neither JS nor the worker ever holds the whole file. Handles are closed by `close_document` on destroy, and all of them on page load. Command names are duplicated in `pdf.constants.ts`.
+- `renderPage` is cancellable, sizes the canvas for devicePixelRatio (capped at `MAX_CANVAS_PIXELS`) and reports the page's real size.
+- Only page 1 is measured before display. `usePageSizes` starts every page at that size and corrects each one when it renders, pinning the top visible page so nothing jumps. Fit-width fits page 1.
+- `PdfPage` only mounts a canvas while near the viewport **and** its tab is active (one shared observer, `useVisibilityObserver` + `RENDER_MARGIN`). When a page stops being shown, its canvas is zeroed and `releasePage` frees pdf.js's cache for it. Pages carry `data-page-number`; `findPageAt` binary-searches them for `usePageNavigation` (rAF-throttled) and `usePageSizes`. `useScrollAnchor` keeps the scroll position stable across zoom changes (top-left by default, the pointer for Ctrl+wheel via `useWheelZoom`, a non-passive listener so the webview itself never zooms).
 
 **Files opened by the OS** ("Open with…" / default PDF app). This spans Rust and the frontend:
 - `src-tauri/src/opened_files.rs` queues paths in `PendingFiles` and emits `opened-files://pending`. The frontend drains the queue with the `take_pending_files` command (`document/useOpenedFiles`). The queue exists so files arriving before React mounts aren't lost.
@@ -64,7 +64,7 @@ Errors switch to the Home tab, which displays them.
 **File access security.** The fs plugin only reads files in its scope.
 - The dialog plugin adds picked files to the scope, and `opened_files.rs` adds argv files.
 - `tauri-plugin-persisted-scope` keeps those grants across restarts, which is what lets Recent reopen files.
-- `open_with.rs` refuses paths outside the scope.
+- Rust commands that take a path (`open_with.rs`, `document_source.rs`) check it with `scope::ensure_allowed`. The webview has no fs permission of its own; only Rust reads files.
 - Permissions live in `src-tauri/capabilities/default.json`.
 
 **Recent files.** `history` persists metadata (path, name, size, openedAt; max 20) to `history.json` via `@tauri-apps/plugin-store` (`LazyStore`). Right-click or long-press (`shared/hooks/useLongPress`) opens a `ContextMenu` from the `menu` module. The menu entries are data (`MenuEntry[]`, with `separator()`), built in `home/home.menus.ts`.
@@ -75,3 +75,7 @@ Errors switch to the Home tab, which displays them.
 - **Keep `ashpd` on the `async-io` feature (`default-features = false`).** Its `tokio` feature switches zbus into Tokio mode. The opener plugin's blocking D-Bus call then tries to start a second Tokio runtime inside Tauri's, which panics.
 
 **Menus.** `menu` is generic and data-driven. `MenuList` is shared by the menu bar dropdowns and the portal-rendered `ContextMenu`, which keeps itself inside the viewport.
+
+**Tools.** The Tools tab is a display-only catalog mirroring iLovePDF's tools and categories. It is pure data in `tools/tools.constants.ts` (`TOOL_CATEGORIES`), and nothing is implemented yet. Each tool has its own illustration (`scene`): the mascot doing that tool's job. Scenes live in `tools/components/scenes/`, one file per category, and conversions share the `ConvertScene` template.
+
+**Mascot** (`src/shared/mascot/`). The "foca watona" is the round, front-facing plush seal, never a realistic one. `SealScene` composes it in a 120×96 viewBox, drawing in this order: `behind` → body and face (`mood`) → `front` → flippers (`left`/`right` pose). The flippers come last so they overlap and appear to grip whatever is in `front`. Props in `components/props/` are drawn around their own (0, 0) and placed with `x`/`y`/`rotate`/`scale`. Fur spots come from a fixed seed, so the seal looks the same on every render. `SealBody` derives its SVG ids from `useId`, because many seals share one page. The Home page's `FocaWatona` is an older, separate drawing.

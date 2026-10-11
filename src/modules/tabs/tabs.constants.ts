@@ -11,6 +11,9 @@ export const INITIAL_TABS_STATE: TabsState = {
   activeId: HOME_TAB.id,
 };
 
+/** sessionStorage key for the open tabs (see tabs-session.service). */
+export const TABS_SESSION_KEY = "pdf-tormentosa:tabs";
+
 /** Icon shown in the tab bar for each kind of tab. */
 export const TAB_ICONS: Record<TabKind, IconType> = {
   home: LuHouse,

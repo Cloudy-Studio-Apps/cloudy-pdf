@@ -2,7 +2,7 @@ import { PdfPage } from "./PdfPage";
 import type { PageListProps } from "../viewer.types";
 
 /** All pages stacked vertically (continuous scroll). */
-export function PageList({ pdf, pageSizes, scale, scrollRoot }: PageListProps) {
+export function PageList({ pdf, pageSizes, scale, isActive, observe, onPageSize }: PageListProps) {
   return (
     // w-max + min-w-full: when zoomed in, pages wider than the window make the list grow,
     // so horizontal scrolling works; when zoomed out, pages stay centered.
@@ -16,7 +16,9 @@ export function PageList({ pdf, pageSizes, scale, scrollRoot }: PageListProps) {
           pageNumber={index + 1}
           size={size}
           scale={scale}
-          scrollRoot={scrollRoot}
+          isActive={isActive}
+          observe={observe}
+          onPageSize={onPageSize}
         />
       ))}
     </div>

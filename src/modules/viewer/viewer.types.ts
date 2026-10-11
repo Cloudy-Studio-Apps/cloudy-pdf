@@ -2,7 +2,7 @@
 import type { RefObject } from "react";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import type { PageSize, PdfDocument } from "@/modules/pdf/pdf.types";
-import type { Point } from "@/shared/hooks/hooks.types";
+import type { ObserveVisibility, Point } from "@/shared/hooks/hooks.types";
 
 /**
  * "fit-width": scale follows the window width (recomputed on resize).
@@ -48,17 +48,28 @@ export interface PageNavigation {
 export type PdfLoadState =
   | { status: "loading" }
   | { status: "error"; error: string }
-  | { status: "ready"; pdf: PdfDocument; pageSizes: PageSize[] };
+  | { status: "ready"; pdf: PdfDocument; defaultPageSize: PageSize };
+
+/** Called by a page once it knows its real size at 100%. */
+export type PageSizeReporter = (pageNumber: number, size: PageSize) => void;
+
+/** Returned by usePageSizes. */
+export interface PageSizes {
+  /** One entry per page; page 1's size until a page reports its own. */
+  sizes: PageSize[];
+  reportSize: PageSizeReporter;
+}
 
 export interface DocumentViewerProps {
   document: OpenedDocument;
-  /** False while the viewer's tab is in the background; disables its keyboard shortcuts. */
+  /** False while the viewer's tab is in the background; disables its shortcuts and canvases. */
   isActive: boolean;
 }
 
 export interface ViewerCanvasProps {
   pdf: PdfDocument;
-  pageSizes: PageSize[];
+  /** Page 1's size: the starting size of every page, and what fit-width fits. */
+  defaultPageSize: PageSize;
   isActive: boolean;
 }
 
@@ -66,8 +77,11 @@ export interface PageListProps {
   pdf: PdfDocument;
   pageSizes: PageSize[];
   scale: number;
-  /** The scrolling element; pages use it to detect when they're near the screen. */
-  scrollRoot: HTMLElement | null;
+  /** Background tabs draw no canvases, which frees their memory. */
+  isActive: boolean;
+  /** Shared observer telling each page when it's near the screen; null until the scroll area exists. */
+  observe: ObserveVisibility | null;
+  onPageSize: PageSizeReporter;
 }
 
 export interface PdfPageProps {
@@ -75,7 +89,9 @@ export interface PdfPageProps {
   pageNumber: number;
   size: PageSize;
   scale: number;
-  scrollRoot: HTMLElement | null;
+  isActive: boolean;
+  observe: ObserveVisibility | null;
+  onPageSize: PageSizeReporter;
 }
 
 export interface PageRenderOptions {
@@ -83,8 +99,9 @@ export interface PageRenderOptions {
   pdf: PdfDocument;
   pageNumber: number;
   scale: number;
-  /** Render only when true (page near the screen). */
+  /** Render only when true (page near the screen, tab active). */
   enabled: boolean;
+  onPageSize: PageSizeReporter;
 }
 
 export interface ViewerToolbarProps {

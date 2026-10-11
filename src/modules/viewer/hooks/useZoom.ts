@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { clamp } from "@/shared/utils/math.utils";
 import { MAX_ZOOM, MIN_ZOOM, PAGE_GUTTER, ZOOM_STEPS } from "../viewer.constants";
 import type { ZoomControl, ZoomState } from "../viewer.types";
@@ -12,7 +12,7 @@ const previousStep = (scale: number) =>
 
 /**
  * Zoom state for the viewer.
- * @param pageWidth widest page at 100%, in px
+ * @param pageWidth width of the page to fit at 100%, in px
  * @param viewportWidth current width of the scroll area, in px
  */
 export function useZoom(pageWidth: number, viewportWidth: number): ZoomControl {
@@ -31,13 +31,17 @@ export function useZoom(pageWidth: number, viewportWidth: number): ZoomControl {
   // re-renders) each move one step instead of all reading the same stale scale.
   // Only the first step out of fit-width uses the derived `scale`; after that the
   // mode is "custom" and the stored scale is the source of truth.
+  // The fit-width scale is read from a ref, so these callbacks stay stable while the
+  // window resizes; otherwise every resize would re-render whatever receives them.
+  const fitScale = useRef(scale);
+  fitScale.current = scale;
   const step = useCallback(
     (pick: (scale: number) => number) =>
       setState((current) => ({
         mode: "custom",
-        scale: pick(current.mode === "custom" ? current.scale : scale),
+        scale: pick(current.mode === "custom" ? current.scale : fitScale.current),
       })),
-    [scale],
+    [],
   );
   const zoomIn = useCallback(() => step(nextStep), [step]);
   const zoomOut = useCallback(() => step(previousStep), [step]);

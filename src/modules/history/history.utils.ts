@@ -8,7 +8,7 @@ import type { HistoryEntry } from "./history.types";
 
 /** Snapshot of an opened document for the history (metadata only). */
 export function toHistoryEntry(document: OpenedDocument, openedAt = Date.now()): HistoryEntry {
-  return { path: document.path, name: document.name, size: document.data.byteLength, openedAt };
+  return { path: document.path, name: document.name, size: document.size, openedAt };
 }
 
 /**

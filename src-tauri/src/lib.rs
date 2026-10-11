@@ -1,12 +1,17 @@
 //! Tauri backend: creates the native window that hosts the React frontend
 //! and registers the plugins/commands the frontend is allowed to use.
 
+mod document_source;
 mod open_with;
 mod opened_files;
+mod scope;
 #[cfg(desktop)]
 mod window;
 
+use document_source::DocumentSources;
 use opened_files::PendingFiles;
+use tauri::Manager;
+use tauri::webview::PageLoadEvent;
 
 // On Android/iOS the app starts from this function instead of `main`.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -38,10 +43,23 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         // Shared state: the queue of files the OS asked us to open.
         .manage(PendingFiles::default())
+        // Open documents whose bytes the frontend reads on demand (see document_source.rs).
+        .manage(DocumentSources::default())
+        // A reload (e.g. Android resuming the app in dev) drops the frontend's open
+        // documents without closing them; release their files here.
+        .on_page_load(|webview, payload| {
+            if payload.event() == PageLoadEvent::Started {
+                webview.state::<DocumentSources>().close_all();
+            }
+        })
         // Rust functions callable from the frontend with `invoke("…")`.
         .invoke_handler(tauri::generate_handler![
             opened_files::take_pending_files,
-            open_with::open_with
+            open_with::open_with,
+            document_source::document_info,
+            document_source::open_document,
+            document_source::read_document_range,
+            document_source::close_document
         ])
         .setup(|_app| {
             // Desktop: a PDF opened from the file manager arrives as a launch argument

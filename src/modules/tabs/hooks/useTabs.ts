@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import { INITIAL_TABS_STATE } from "../tabs.constants";
-import { activateTab, closeTab, cycleTab, openDocumentTab } from "../tabs.utils";
+import { activateTab, closeTab, cycleTab, openDocumentTab, restoreTabs } from "../tabs.utils";
 import type { TabDirection, TabsControl } from "../tabs.types";
 
 /**
@@ -20,6 +20,10 @@ export function useTabs(): TabsControl {
     (document: OpenedDocument) => setState((s) => openDocumentTab(s, document)),
     [],
   );
+  const restore = useCallback(
+    (documents: OpenedDocument[], active: string) => setState((s) => restoreTabs(s, documents, active)),
+    [],
+  );
 
   // activeId always points to an existing tab (the utils guarantee it); Home is a safe fallback.
   const activeTab = useMemo(
@@ -27,5 +31,5 @@ export function useTabs(): TabsControl {
     [state],
   );
 
-  return { tabs: state.tabs, activeTab, activate, openDocument, close, closeActive, cycle };
+  return { tabs: state.tabs, activeTab, activate, openDocument, close, closeActive, cycle, restore };
 }

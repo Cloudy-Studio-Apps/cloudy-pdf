@@ -7,23 +7,14 @@
 
 use tauri::{AppHandle, Runtime};
 
+use crate::scope::ensure_allowed;
+
 /// Command called from the frontend with the file to open.
 #[tauri::command]
 pub async fn open_with<R: Runtime>(app: AppHandle<R>, path: String) -> Result<(), String> {
+    // Security: only files the app was already granted can be handed to other apps.
     ensure_allowed(&app, &path)?;
     show_app_chooser(&path).await
-}
-
-/// Security: only files the app was already granted (opened via the dialog,
-/// the OS, or Recent) can be handed to other apps; never arbitrary paths.
-fn ensure_allowed<R: Runtime>(app: &AppHandle<R>, path: &str) -> Result<(), String> {
-    use tauri_plugin_fs::FsExt;
-
-    if app.fs_scope().is_allowed(path) {
-        Ok(())
-    } else {
-        Err("This file is not accessible to the app.".into())
-    }
 }
 
 #[cfg(target_os = "linux")]

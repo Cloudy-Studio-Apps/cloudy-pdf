@@ -40,6 +40,17 @@ export interface TabsState {
 
 export type TabDirection = 1 | -1;
 
+/**
+ * What survives a page reload: which documents were open and which tab was active.
+ * Only paths, not file contents, which are re-read on restore.
+ */
+export interface TabsSession {
+  /** Paths of the open document tabs, in tab order. */
+  documents: string[];
+  /** The active tab: a fixed tab's id ("home", "tools") or a document's path. */
+  active: string;
+}
+
 /** Everything the UI needs to show and drive the tabs (returned by useTabs). */
 export interface TabsControl {
   tabs: Tab[];
@@ -49,6 +60,8 @@ export interface TabsControl {
   close: (tabId: string) => void;
   closeActive: () => void;
   cycle: (direction: TabDirection) => void;
+  /** Reopens a saved session's documents (already re-read) in one update. */
+  restore: (documents: OpenedDocument[], active: string) => void;
 }
 
 export interface TabBarProps {

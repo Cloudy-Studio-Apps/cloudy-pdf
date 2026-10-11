@@ -25,10 +25,13 @@ import { TabContent } from "./components/TabContent";
 import { useAppMenus } from "./hooks/useAppMenus";
 import { useAppShortcuts } from "./hooks/useAppShortcuts";
 import { useHomePage } from "./hooks/useHomePage";
+import { useTabsSession } from "./hooks/useTabsSession";
 import type { AppActions } from "./app.types";
 
 export function App() {
   const tabs = useTabs();
+  // Brings back the open documents after a reload (e.g. Android resuming the app).
+  useTabsSession(tabs);
   const history = useHistory();
   const system = useSystemActions();
   const [isAboutOpen, setAboutOpen] = useState(false);
