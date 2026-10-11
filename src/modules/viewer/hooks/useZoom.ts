@@ -27,8 +27,20 @@ export function useZoom(pageWidth: number, viewportWidth: number): ZoomControl {
   }, [state, pageWidth, viewportWidth]);
 
   // Any manual zoom leaves fit-width mode and freezes the chosen scale.
-  const zoomIn = useCallback(() => setState({ mode: "custom", scale: nextStep(scale) }), [scale]);
-  const zoomOut = useCallback(() => setState({ mode: "custom", scale: previousStep(scale) }), [scale]);
+  // Updates are functional so fast repeats (several Ctrl+wheel notches before React
+  // re-renders) each move one step instead of all reading the same stale scale.
+  // Only the first step out of fit-width uses the derived `scale`; after that the
+  // mode is "custom" and the stored scale is the source of truth.
+  const step = useCallback(
+    (pick: (scale: number) => number) =>
+      setState((current) => ({
+        mode: "custom",
+        scale: pick(current.mode === "custom" ? current.scale : scale),
+      })),
+    [scale],
+  );
+  const zoomIn = useCallback(() => step(nextStep), [step]);
+  const zoomOut = useCallback(() => step(previousStep), [step]);
   const fitWidth = useCallback(() => setState((current) => ({ ...current, mode: "fit-width" })), []);
 
   return {

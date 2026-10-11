@@ -1,0 +1,77 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+PDF Tormentosa is a minimalist PDF reader: Tauri 2 (Rust) + React 19 + TypeScript + Tailwind CSS 4 + pdf.js (`pdfjs-dist` v6). Targets are Linux and Android, and the UI is white mode only for now.
+
+## Commands
+
+Use **pnpm** only.
+
+```sh
+pnpm install
+pnpm tauri dev                     # run the desktop app (Vite on :1420 + Rust backend)
+pnpm build                         # tsc type-check + Vite build (frontend only)
+pnpm exec tsc --noEmit             # type-check only
+cd src-tauri && cargo check        # compile-check the Rust backend
+pnpm tauri build --bundles deb     # release package (also: rpm, appimage)
+pnpm tauri android init|dev        # Android (needs SDK/NDK + rust android targets)
+```
+
+There is no linter and no test suite yet. `pnpm build` fails if a Tauri npm plugin and its Rust crate differ in major.minor version, so bump both together. `pnpm-workspace.yaml` exempts specific plugin versions from pnpm's minimum-release-age rule.
+
+## Conventions (user requirements)
+
+- Modular layout: `src/modules/<module>/` holds `components/`, `hooks/`, `services/`, `<module>.types.ts`, `<module>.constants.ts`, `<module>.utils.ts`. **All types go in `<module>.types.ts`**, including component props.
+- Keep files and components small. Don't duplicate logic; reuse a shared util, hook or service.
+  - `services/` hold side effects (Tauri, pdf.js).
+  - `hooks/` hold React state.
+  - Components only compose hooks and render markup.
+  - State rules live as pure functions in `*.utils.ts`, e.g. `tabs.utils.ts`, `history.utils.ts`, wrapped by a thin hook.
+- Icons come from `react-icons` (the `react-icons/lu` Lucide set), not `lucide-react`.
+- Style: Tailwind with tokens defined in `src/styles/index.css` `@theme`. Use token classes (`text-ink`, `bg-canvas`, `border-border`…) rather than raw colors. **No rounded corners** anywhere in the UI.
+- Comment the *why* of non-obvious code. Each file starts with a short purpose note.
+- `@/` resolves to `src/` (tsconfig `paths` + Vite `resolve.tsconfigPaths`).
+
+## Architecture
+
+**Layers.** Imports go app → modules → shared, never the reverse.
+- `src/app/` is the shell. It wires modules together, builds the menus (`useAppMenus`), holds the shortcuts (`APP_SHORTCUTS`, the single source for key handlers and menu hints) and maps a tab to its page (`TabContent`).
+- Modules don't import each other's internals beyond types. When a module needs something from the app layer, it's passed as props, e.g. HomePage receives `openShortcut`.
+- `src/shared/` holds generic UI primitives, DOM hooks, keyboard handling (`useKeyboardShortcuts`, the only way shortcuts are registered) and utils.
+
+**Opening a document.** `document/useOpenDocument` reads bytes via `@tauri-apps/plugin-fs` and calls `onOpened(doc)`. App then:
+- opens or focuses a tab (`tabs`); the same path focuses the existing tab;
+- records the file in `history`.
+
+Errors switch to the Home tab, which displays them.
+
+**Tabs.** Home and Tools are fixed tabs, and document tabs can be closed. All tab panels stay mounted. Inactive ones use `invisible` + `inert` (not `display:none`) so the viewer keeps its scroll position and its fit-width measurement. Hooks with global effects must therefore be gated by `isActive`; for example, viewer zoom shortcuts only work on the active tab.
+
+**Viewer.** `pdf/pdf.service.ts` is the only code that imports pdf.js.
+- The worker is set up via a Vite `?url` import.
+- `loadPdf` passes a copy of the buffer, because pdf.js transfers it to its worker and empties the original.
+- `renderPage` is cancellable and sizes the canvas for devicePixelRatio.
+- `getPageSizes` is measured up front so placeholders have the right size.
+- In the viewer, `PdfPage` only mounts a canvas while near the viewport (`useInView` + `RENDER_MARGIN`). Pages carry `data-page-number`, which `usePageNavigation` relies on. `useScrollAnchor` keeps the scroll position stable across zoom changes (top-left by default, the pointer for Ctrl+wheel via `useWheelZoom`, a non-passive listener so the webview itself never zooms).
+
+**Files opened by the OS** ("Open with…" / default PDF app). This spans Rust and the frontend:
+- `src-tauri/src/opened_files.rs` queues paths in `PendingFiles` and emits `opened-files://pending`. The frontend drains the queue with the `take_pending_files` command (`document/useOpenedFiles`). The queue exists so files arriving before React mounts aren't lost.
+- Desktop: files arrive as argv. They come from the custom `.desktop` template `src-tauri/linux/pdf-tormentosa.desktop` (`Exec=… %F`, `MimeType=application/pdf`) and from the single-instance plugin when a second launch forwards its files. Each path is added to the fs scope in Rust.
+- Android: files arrive via `RunEvent::Opened` as `content://` URIs. `bundle.fileAssociations` generates the intent filter.
+- Event and command names are plain strings duplicated in `document.constants.ts` and Rust. Keep them in sync.
+
+**File access security.** The fs plugin only reads files in its scope.
+- The dialog plugin adds picked files to the scope, and `opened_files.rs` adds argv files.
+- `tauri-plugin-persisted-scope` keeps those grants across restarts, which is what lets Recent reopen files.
+- `open_with.rs` refuses paths outside the scope.
+- Permissions live in `src-tauri/capabilities/default.json`.
+
+**Recent files.** `history` persists metadata (path, name, size, openedAt; max 20) to `history.json` via `@tauri-apps/plugin-store` (`LazyStore`). Right-click or long-press (`shared/hooks/useLongPress`) opens a `ContextMenu` from the `menu` module. The menu entries are data (`MenuEntry[]`, with `separator()`), built in `home/home.menus.ts`.
+
+**OS hand-offs** (`system` module).
+- "Show in file manager" uses `tauri-plugin-opener` `revealItemInDir` (FileManager1 over D-Bus on Linux).
+- "Open with…" is the Rust command `open_with`, which uses the XDG Desktop Portal app chooser via `ashpd`. This is Linux-only, and `isDesktop` hides these entries on mobile.
+- **Keep `ashpd` on the `async-io` feature (`default-features = false`).** Its `tokio` feature switches zbus into Tokio mode. The opener plugin's blocking D-Bus call then tries to start a second Tokio runtime inside Tauri's, which panics.
+
+**Menus.** `menu` is generic and data-driven. `MenuList` is shared by the menu bar dropdowns and the portal-rendered `ContextMenu`, which keeps itself inside the viewport.

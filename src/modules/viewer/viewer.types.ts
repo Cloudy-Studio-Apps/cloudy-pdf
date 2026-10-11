@@ -2,6 +2,7 @@
 import type { RefObject } from "react";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import type { PageSize, PdfDocument } from "@/modules/pdf/pdf.types";
+import type { Point } from "@/shared/hooks/hooks.types";
 
 /**
  * "fit-width": scale follows the window width (recomputed on resize).
@@ -25,6 +26,12 @@ export interface ZoomControl {
   zoomIn: () => void;
   zoomOut: () => void;
   fitWidth: () => void;
+}
+
+/** Returned by useScrollAnchor. */
+export interface ScrollAnchor {
+  /** Point (px from the scroll area's top-left) that stays fixed during the next zoom change. */
+  setAnchor: (point: Point) => void;
 }
 
 /** Current page and a way to jump to another (returned by usePageNavigation). */

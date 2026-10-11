@@ -5,12 +5,13 @@ import { ViewerToolbar } from "./ViewerToolbar";
 import { usePageNavigation } from "../hooks/usePageNavigation";
 import { useScrollAnchor } from "../hooks/useScrollAnchor";
 import { useViewerShortcuts } from "../hooks/useViewerShortcuts";
+import { useWheelZoom } from "../hooks/useWheelZoom";
 import { useZoom } from "../hooks/useZoom";
 import type { ViewerCanvasProps } from "../viewer.types";
 
 /**
  * The reading area: a scrollable list of pages and the floating toolbar.
- * It connects the viewer hooks (zoom, navigation, scroll anchoring, shortcuts).
+ * It connects the viewer hooks (zoom, navigation, scroll anchoring, shortcuts, Ctrl+wheel).
  */
 export function ViewerCanvas({ pdf, pageSizes, isActive }: ViewerCanvasProps) {
   // The scroll element is kept in state (via a callback ref) rather than a plain ref,
@@ -22,9 +23,10 @@ export function ViewerCanvas({ pdf, pageSizes, isActive }: ViewerCanvasProps) {
 
   const zoom = useZoom(widestPage, viewportWidth);
   const navigation = usePageNavigation(scrollRoot, pageSizes.length);
-  useScrollAnchor(scrollRoot, zoom.scale);
+  const anchor = useScrollAnchor(scrollRoot, zoom.scale);
   // Several viewers can be mounted (one per tab); only the visible one reacts to zoom keys.
   useViewerShortcuts(zoom, isActive);
+  useWheelZoom(scrollRoot, zoom, anchor);
 
   return (
     // `relative` lets the toolbar float over the pages instead of taking layout space.

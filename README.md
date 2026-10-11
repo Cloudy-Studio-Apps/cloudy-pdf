@@ -66,6 +66,7 @@ its scroll position and zoom.
 | Ctrl+W / middle-click | Close the current / clicked document tab |
 | Ctrl+Tab, Ctrl+Shift+Tab | Next / previous tab |
 | Ctrl+=, Ctrl+−, Ctrl+0 | Zoom in / out / fit width |
+| Ctrl + mouse wheel / touchpad pinch | Zoom in / out around the pointer |
 
 ## Default PDF reader
 
