@@ -154,6 +154,8 @@ export interface ViewerShortcutsOptions {
   zoom: ZoomControl;
   navigation: PageNavigation;
   display: PageDisplay;
+  tool: ViewerTool;
+  setTool: (tool: ViewerTool) => void;
   enabled: boolean;
 }
 
@@ -171,6 +173,8 @@ export interface RailItem<T extends string> {
   id: T;
   label: string;
   icon: IconType;
+  /** Shown in the tooltip; the key itself is registered by useViewerShortcuts. */
+  shortcut?: KeyboardShortcut;
 }
 
 export interface ViewerPagesProps {

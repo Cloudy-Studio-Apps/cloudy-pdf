@@ -1,3 +1,4 @@
+import { formatShortcut } from "@/shared/keyboard/keyboard.utils";
 import { UPCOMING_TOOLS, VIEWER_TOOLS } from "../viewer.constants";
 import { RailButton } from "./RailButton";
 import type { ToolsRailProps } from "../viewer.types";
@@ -17,7 +18,7 @@ export function ToolsRail({ tool, onToolChange }: ToolsRailProps) {
         <RailButton
           key={item.id}
           icon={item.icon}
-          label={item.label}
+          label={item.shortcut ? `${item.label} (${formatShortcut(item.shortcut)})` : item.label}
           active={tool === item.id}
           onClick={() => onToolChange(item.id)}
         />

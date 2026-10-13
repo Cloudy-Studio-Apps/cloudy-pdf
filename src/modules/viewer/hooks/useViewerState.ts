@@ -38,7 +38,7 @@ export function useViewerState({ pdf, defaultPageSize, isActive }: UseViewerStat
   const observe = useVisibilityObserver(scrollRoot, RENDER_MARGIN);
   const isPanning = useHandTool(scrollRoot, tool === "hand");
   // Several viewers can be mounted (one per tab); only the visible one reacts to keys.
-  useViewerShortcuts({ zoom, navigation, display, enabled: isActive });
+  useViewerShortcuts({ zoom, navigation, display, tool, setTool, enabled: isActive });
   useWheelZoom(scrollRoot, zoom, anchor);
 
   // Rotating or switching page display rebuilds the whole layout; stay on the same page.

@@ -1,6 +1,7 @@
-import { LuAppWindow, LuFolderSearch, LuHand, LuInfo, LuPencil, LuRotateCcw, LuRotateCw, LuTextCursor } from "react-icons/lu";
+import { LuAppWindow, LuFolderSearch, LuInfo, LuRotateCcw, LuRotateCw } from "react-icons/lu";
 import { separator } from "@/modules/menu/menu.utils";
 import type { MenuEntry } from "@/modules/menu/menu.types";
+import { VIEWER_TOOLS } from "@/modules/viewer/viewer.constants";
 import { isDesktop } from "@/shared/utils/platform.utils";
 import type { DocumentMenuOptions } from "./app.types";
 
@@ -15,27 +16,14 @@ export function buildDocumentMenu(options: DocumentMenuOptions): MenuEntry[] {
   const tools: MenuEntry[] = options.isWide
     ? []
     : [
-        {
-          id: "tool-select",
-          label: "Select text",
-          icon: LuTextCursor,
-          checked: tool === "select",
-          onSelect: () => options.onToolChange("select"),
-        },
-        {
-          id: "tool-hand",
-          label: "Hand tool",
-          icon: LuHand,
-          checked: tool === "hand",
-          onSelect: () => options.onToolChange("hand"),
-        },
-        {
-          id: "tool-draw",
-          label: "Draw",
-          icon: LuPencil,
-          checked: tool === "draw",
-          onSelect: () => options.onToolChange("draw"),
-        },
+        ...VIEWER_TOOLS.map(({ id, label, icon, shortcut }) => ({
+          id: `tool-${id}`,
+          label,
+          icon,
+          shortcut,
+          checked: tool === id,
+          onSelect: () => options.onToolChange(id),
+        })),
         separator("tools"),
       ];
   const system: MenuEntry[] = isDesktop

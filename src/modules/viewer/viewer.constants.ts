@@ -10,6 +10,7 @@ import {
   LuTextCursor,
   LuType,
 } from "react-icons/lu";
+import type { KeyboardShortcut } from "@/shared/keyboard/keyboard.types";
 import type { PageHighlight, RailItem, SidePanelId, ViewerShortcuts, ViewerTool } from "./viewer.types";
 
 /** Zoom levels used by the +/− buttons, Ctrl+= / Ctrl+− and Ctrl+wheel. */
@@ -66,11 +67,21 @@ export const VIEWER_SHORTCUTS: ViewerShortcuts = {
   fitWidth: { key: "2", mod: true },
 };
 
+/**
+ * Acrobat's single-key tool accelerators: V Select, H Hand, N Pencil. Plain keys,
+ * so they never fire while typing in a form field or the find bar.
+ */
+export const TOOL_SHORTCUTS: Record<ViewerTool, KeyboardShortcut> = {
+  select: { key: "v" },
+  hand: { key: "h" },
+  draw: { key: "n" },
+};
+
 /** Working tools of the left rail. */
 export const VIEWER_TOOLS: RailItem<ViewerTool>[] = [
-  { id: "select", label: "Select text", icon: LuTextCursor },
-  { id: "hand", label: "Hand tool (drag to scroll)", icon: LuHand },
-  { id: "draw", label: "Draw", icon: LuPencil },
+  { id: "select", label: "Select", icon: LuTextCursor, shortcut: TOOL_SHORTCUTS.select },
+  { id: "hand", label: "Hand tool (drag to scroll)", icon: LuHand, shortcut: TOOL_SHORTCUTS.hand },
+  { id: "draw", label: "Draw", icon: LuPencil, shortcut: TOOL_SHORTCUTS.draw },
 ];
 
 /** Shown disabled until the PDF tools exist, so the rail already reads like Acrobat's. */
