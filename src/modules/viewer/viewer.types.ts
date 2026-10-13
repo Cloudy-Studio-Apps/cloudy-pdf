@@ -1,5 +1,5 @@
 /** Types for the viewer module (displaying a loaded PDF and its controls). */
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { IconType } from "react-icons";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import type { MenuEntry } from "@/modules/menu/menu.types";
@@ -46,8 +46,23 @@ export interface RotationControl {
 /** "continuous": all pages stacked. "single": one page at a time. */
 export type PageDisplay = "continuous" | "single";
 
-/** What a mouse drag on the pages does: select text, or pan. */
-export type ViewerTool = "select" | "hand";
+/** What a drag on the pages does: select text (and annotations), pan, or draw. */
+export type ViewerTool = "select" | "hand" | "draw";
+
+/** What a page overlay is told about its page: which one, and how it's displayed. */
+export interface PageOverlayProps {
+  pageNumber: number;
+  /** Size at 100%, not rotated by the view. */
+  size: PageSize;
+  scale: number;
+  rotation: Rotation;
+}
+
+/**
+ * Drawn over each shown page, above its text and form layers (e.g. annotations).
+ * Supplied by the app, so the viewer doesn't depend on what's drawn there.
+ */
+export type PageOverlay = ComponentType<PageOverlayProps>;
 
 export type SidePanelId = "thumbnails" | "bookmarks";
 
@@ -161,6 +176,7 @@ export interface RailItem<T extends string> {
 export interface ViewerPagesProps {
   viewer: ViewerState;
   highlights: HighlightsByPage;
+  pageOverlay?: PageOverlay;
 }
 
 export interface PageListProps {
@@ -175,6 +191,7 @@ export interface PageListProps {
   observe: ObserveVisibility | null;
   highlights: HighlightsByPage;
   onPageSize: PageSizeReporter;
+  pageOverlay?: PageOverlay;
 }
 
 export interface PdfPageProps {
@@ -187,6 +204,7 @@ export interface PdfPageProps {
   observe: ObserveVisibility | null;
   highlights: readonly PageHighlight[];
   onPageSize: PageSizeReporter;
+  pageOverlay?: PageOverlay;
 }
 
 export interface ViewerToolbarProps {

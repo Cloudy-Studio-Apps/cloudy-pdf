@@ -3,9 +3,9 @@ import { RailButton } from "./RailButton";
 import type { ToolsRailProps } from "../viewer.types";
 
 /**
- * Left rail of quick tools (Acrobat-style). Select and Hand work; the rest are
+ * Left rail of quick tools (Acrobat-style). Select, Hand and Draw work; the rest are
  * placeholders until the PDF tools exist. Hidden on phones, where touch already
- * pans and the two working tools move into the ⋯ menu.
+ * pans and the working tools move into the ⋯ menu.
  */
 export function ToolsRail({ tool, onToolChange }: ToolsRailProps) {
   return (

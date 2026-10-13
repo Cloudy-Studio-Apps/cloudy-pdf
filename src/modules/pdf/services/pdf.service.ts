@@ -5,6 +5,7 @@
  */
 import {
   AbortException,
+  AnnotationEditorType,
   AnnotationLayer,
   AnnotationMode,
   GlobalWorkerOptions,
@@ -19,13 +20,15 @@ import {
 // `?url` is a Vite feature: it bundles the worker file and gives us its final URL.
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { clamp } from "@/shared/utils/math.utils";
-import { MAX_CANVAS_PIXELS, NO_LINKS, RANGE_CHUNK_SIZE } from "../pdf.constants";
+import { MAX_CANVAS_PIXELS, NEW_ANNOTATION_PREFIX, NO_LINKS, RANGE_CHUNK_SIZE } from "../pdf.constants";
+import { hexToRgb } from "../pdf.utils";
 import type {
   FormChangeHooks,
   PageSize,
   PageTarget,
   PdfDestination,
   PdfDocument,
+  PdfInkStroke,
   PdfjsOutlineItem,
   PdfLoadJob,
   PdfMetadata,
@@ -235,6 +238,66 @@ async function renderFormLayer(
  */
 export function exportPdf(pdf: PdfDocument): Promise<Uint8Array> {
   return pdf.saveDocument();
+}
+
+/** Storage keys of the strokes last handed to pdf.js, per document, so the next call can replace them. */
+const writtenInkKeys = new WeakMap<PdfDocument, string[]>();
+
+/**
+ * Hands the user's strokes to pdf.js, so the next `exportPdf` writes them as Ink
+ * annotations (with an appearance stream, so every reader shows them).
+ *
+ * This uses pdf.js's internal editor format: what its own InkEditor.serialize()
+ * produces, put in annotationStorage under a `pdfjs_internal_editor_` key. It is
+ * the only code relying on it; re-check it when upgrading pdf.js
+ * (InkEditor.serialize and InkAnnotation.createNewDict in the worker).
+ */
+export async function setInkAnnotations(pdf: PdfDocument, strokes: PdfInkStroke[]): Promise<void> {
+  const storage = pdf.annotationStorage;
+  for (const key of writtenInkKeys.get(pdf) ?? []) storage.remove(key);
+
+  const entries = await Promise.all(
+    strokes.map(async (stroke) => {
+      const page = await pdf.getPage(stroke.pageNumber);
+      return [`${NEW_ANNOTATION_PREFIX}ink-${stroke.id}`, toInkData(page, stroke)] as const;
+    }),
+  );
+  for (const [key, data] of entries) storage.setValue(key, data);
+  writtenInkKeys.set(
+    pdf,
+    entries.map(([key]) => key),
+  );
+}
+
+/** One stroke in the serialized InkEditor shape, in PDF coordinates (origin bottom-left). */
+function toInkData(page: PDFPageProxy, stroke: PdfInkStroke) {
+  const viewport = page.getViewport({ scale: 1 });
+  const points = stroke.points.flatMap(({ x, y }) => viewport.convertToPdfPoint(x, y) as [number, number]);
+
+  // `lines` holds Bézier segments of 6 numbers: 2 control points, then the end
+  // point. NaN control points mean a straight line, so this draws a polyline.
+  const lines = new Float32Array(points.length * 3);
+  lines.fill(Number.NaN);
+  for (let i = 0; i < points.length; i += 2) {
+    lines[i * 3 + 4] = points[i];
+    lines[i * 3 + 5] = points[i + 1];
+  }
+
+  const half = stroke.thickness / 2;
+  const xs = points.filter((_, i) => i % 2 === 0);
+  const ys = points.filter((_, i) => i % 2 === 1);
+  return {
+    annotationType: AnnotationEditorType.INK,
+    pageIndex: stroke.pageNumber - 1,
+    rect: [Math.min(...xs) - half, Math.min(...ys) - half, Math.max(...xs) + half, Math.max(...ys) + half],
+    rotation: 0,
+    color: hexToRgb(stroke.color),
+    thickness: stroke.thickness,
+    opacity: 1,
+    paths: { lines: [lines], points: [Float32Array.from(points)] },
+    structTreeParentId: null,
+    popupRef: "",
+  };
 }
 
 /** Calls `onChange(true)` when a field is first edited, `onChange(false)` after markSaved. Returns an unsubscribe. */

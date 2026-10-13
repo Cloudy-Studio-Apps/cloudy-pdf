@@ -4,7 +4,8 @@ import type { MenuDefinition } from "@/modules/menu/menu.types";
 import type { HomePageProps } from "@/modules/home/home.types";
 import type { Tab, TabDirection } from "@/modules/tabs/tabs.types";
 import type { OpenedDocument } from "@/modules/document/document.types";
-import type { PageSize, PdfDocument } from "@/modules/pdf/pdf.types";
+import type { AnnotationsControl, AnnotationsLayerValue } from "@/modules/annotations/annotations.types";
+import type { PageSize, PdfDocument, PdfInkStroke } from "@/modules/pdf/pdf.types";
 import type { ViewerTool } from "@/modules/viewer/viewer.types";
 
 /** Actions the shell exposes to menus and shortcuts. */
@@ -53,6 +54,20 @@ export interface UseDocumentSaveOptions {
   document: OpenedDocument;
   pdf: PdfDocument;
   onSaved: (document: OpenedDocument) => void;
+  annotations: SaveableAnnotations;
+}
+
+/** The user's strokes, as far as saving is concerned. */
+export interface SaveableAnnotations {
+  strokes: PdfInkStroke[];
+  isModified: boolean;
+  markSaved: () => void;
+}
+
+/** Returned by useDocumentAnnotations: the state, and what the page overlays read. */
+export interface DocumentAnnotations {
+  control: AnnotationsControl;
+  layer: AnnotationsLayerValue;
 }
 
 /** Returned by useDocumentSave. */

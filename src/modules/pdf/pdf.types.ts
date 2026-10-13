@@ -144,6 +144,20 @@ export interface TextLayerHookOptions {
   enabled: boolean;
 }
 
+/**
+ * A freehand stroke to write into the PDF as an Ink annotation. Points are in
+ * the page's viewport at scale 1 (top-left origin, y down); thickness in points.
+ */
+export interface PdfInkStroke {
+  id: string;
+  /** 1-based. */
+  pageNumber: number;
+  /** "#rrggbb". */
+  color: string;
+  thickness: number;
+  points: { x: number; y: number }[];
+}
+
 /** The change hooks of pdf.js's AnnotationStorage, with their real types. */
 export interface FormChangeHooks {
   onSetModified: (() => void) | null;

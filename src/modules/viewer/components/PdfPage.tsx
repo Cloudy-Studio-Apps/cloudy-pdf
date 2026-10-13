@@ -26,6 +26,7 @@ export const PdfPage = memo(function PdfPage({
   observe,
   highlights,
   onPageSize,
+  pageOverlay: Overlay,
 }: PdfPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,6 +63,7 @@ export const PdfPage = memo(function PdfPage({
           />
           {/* `contents`: no box of its own; pdf.js's layer inside is positioned over the page. Last, so it's on top. */}
           <div ref={formLayerRef} className="contents" style={{ "--total-scale-factor": scale } as CSSProperties} />
+          {Overlay && <Overlay pageNumber={pageNumber} size={size} scale={scale} rotation={rotation} />}
         </>
       )}
     </div>

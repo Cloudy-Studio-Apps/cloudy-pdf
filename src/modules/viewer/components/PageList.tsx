@@ -13,6 +13,7 @@ export function PageList({
   observe,
   highlights,
   onPageSize,
+  pageOverlay,
 }: PageListProps) {
   const pageNumbers = singlePage ? [singlePage] : pageSizes.map((_, index) => index + 1);
 
@@ -34,6 +35,7 @@ export function PageList({
           observe={observe}
           highlights={highlights.get(pageNumber) ?? NO_PAGE_HIGHLIGHTS}
           onPageSize={onPageSize}
+          pageOverlay={pageOverlay}
         />
       ))}
     </div>

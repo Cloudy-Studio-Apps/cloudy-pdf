@@ -18,9 +18,10 @@ export function useKeyboardShortcuts(bindings: ShortcutBinding[]): void {
     const onKeyDown = (event: KeyboardEvent) => {
       const typing = isTypingTarget(event);
       const binding = bindingsRef.current.find(
-        ({ shortcut }) =>
+        ({ shortcut, notWhileTyping }) =>
           // While typing, only modifier shortcuts and Escape apply; plain keys go to the field.
-          (!typing || shortcut.mod || shortcut.key === "Escape") && matchesShortcut(event, shortcut),
+          (!typing || (!notWhileTyping && (shortcut.mod || shortcut.key === "Escape"))) &&
+          matchesShortcut(event, shortcut),
       );
       if (!binding) return;
       // Stop the webview's default behaviour (e.g. Ctrl+= zooming the whole UI).

@@ -13,4 +13,9 @@ export type ShortcutHandler = (event: KeyboardEvent) => void;
 export interface ShortcutBinding {
   shortcut: KeyboardShortcut;
   handler: ShortcutHandler;
+  /**
+   * Leave the key to text fields while typing, even with a modifier
+   * (e.g. Ctrl+Z must undo the field's text, not the drawing).
+   */
+  notWhileTyping?: boolean;
 }

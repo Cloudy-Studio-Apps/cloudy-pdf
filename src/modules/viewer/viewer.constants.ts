@@ -70,13 +70,13 @@ export const VIEWER_SHORTCUTS: ViewerShortcuts = {
 export const VIEWER_TOOLS: RailItem<ViewerTool>[] = [
   { id: "select", label: "Select text", icon: LuTextCursor },
   { id: "hand", label: "Hand tool (drag to scroll)", icon: LuHand },
+  { id: "draw", label: "Draw", icon: LuPencil },
 ];
 
 /** Shown disabled until the PDF tools exist, so the rail already reads like Acrobat's. */
 export const UPCOMING_TOOLS: RailItem<string>[] = [
   { id: "comment", label: "Comment", icon: LuMessageSquare },
   { id: "highlight", label: "Highlight", icon: LuHighlighter },
-  { id: "draw", label: "Draw", icon: LuPencil },
   { id: "text", label: "Add text", icon: LuType },
   { id: "sign", label: "Fill & Sign", icon: LuSignature },
 ];

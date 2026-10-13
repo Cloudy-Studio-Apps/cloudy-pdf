@@ -7,7 +7,7 @@ import type { ViewerPagesProps } from "../viewer.types";
  * The reading area: the scrollable pages and the floating page/zoom pill.
  * All state comes from useViewerState; search highlights come from the app.
  */
-export function ViewerPages({ viewer, highlights }: ViewerPagesProps) {
+export function ViewerPages({ viewer, highlights, pageOverlay }: ViewerPagesProps) {
   const { zoom, navigation, rotation, display, tool, isPanning } = viewer;
   const isHand = tool === "hand";
 
@@ -34,6 +34,7 @@ export function ViewerPages({ viewer, highlights }: ViewerPagesProps) {
           observe={viewer.observe}
           highlights={highlights}
           onPageSize={viewer.pageSizes.reportSize}
+          pageOverlay={pageOverlay}
         />
       </div>
       <ViewerToolbar zoom={zoom} navigation={navigation} />

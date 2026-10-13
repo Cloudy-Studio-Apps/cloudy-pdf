@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnnotationsContext } from "@/modules/annotations/annotations.context";
+import { AnnotationBar } from "@/modules/annotations/components/AnnotationBar";
+import { AnnotationOverlay } from "@/modules/annotations/components/AnnotationOverlay";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import { OutlinePanel } from "@/modules/outline/components/OutlinePanel";
 import type { PageTarget } from "@/modules/pdf/pdf.types";
@@ -19,6 +22,7 @@ import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useKeyboardShortcuts } from "@/shared/keyboard/useKeyboardShortcuts";
 import { DOCUMENT_SHORTCUTS, WIDE_LAYOUT_QUERY } from "../app.constants";
 import { buildDocumentMenu } from "../app.menus";
+import { useDocumentAnnotations } from "../hooks/useDocumentAnnotations";
 import { useDocumentSave } from "../hooks/useDocumentSave";
 import { groupHighlights } from "../app.utils";
 import type { WorkspaceProps } from "../app.types";
@@ -44,7 +48,15 @@ export function Workspace({ document, pdf, defaultPageSize, isActive, host }: Wo
   // Save / Save as… live in the app's File menu: register them for this tab.
   const { setCommands, onSaved } = host;
   const saved = useCallback((next: OpenedDocument) => onSaved(document.id, next), [onSaved, document.id]);
-  const saver = useDocumentSave({ document, pdf, onSaved: saved });
+  const annotations = useDocumentAnnotations(viewer.tool, isActive);
+  const { annotations: strokes, isModified: annotationsModified, markSaved } = annotations.control;
+  const saver = useDocumentSave({
+    document,
+    pdf,
+    onSaved: saved,
+    annotations: { strokes, isModified: annotationsModified, markSaved },
+  });
+  const showAnnotationBar = viewer.tool === "draw" || annotations.control.selectedId !== null;
   const { save, saveAs, isModified } = saver;
   useEffect(() => {
     setCommands(document.id, { save, saveAs, isModified });
@@ -125,8 +137,16 @@ export function Workspace({ document, pdf, defaultPageSize, isActive, host }: Wo
       {/* `relative`: on phones the side panel is positioned over the pages. */}
       <div className="relative flex min-h-0 flex-1">
         <ToolsRail tool={viewer.tool} onToolChange={viewer.setTool} />
-        <div className="min-w-0 flex-1 bg-canvas">
-          <ViewerPages viewer={viewer} highlights={highlights} />
+        {/* `relative`: the annotation bar floats over the top of the pages. */}
+        <div className="relative min-w-0 flex-1 bg-canvas">
+          <AnnotationsContext value={annotations.layer}>
+            <ViewerPages viewer={viewer} highlights={highlights} pageOverlay={AnnotationOverlay} />
+          </AnnotationsContext>
+          {showAnnotationBar && (
+            <div className="absolute top-2 left-1/2 z-10 -translate-x-1/2">
+              <AnnotationBar annotations={annotations.control} showStyle={viewer.tool === "draw"} />
+            </div>
+          )}
         </div>
         {panel && (
           <SidePanel panel={panel} onClose={closePanel}>

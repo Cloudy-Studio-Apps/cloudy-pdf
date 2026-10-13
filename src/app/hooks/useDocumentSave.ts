@@ -1,29 +1,32 @@
 import { useCallback, useRef, useState } from "react";
 import { pickSavePath, writeDocument } from "@/modules/document/services/document.service";
 import { useFormModified } from "@/modules/pdf/hooks/useFormModified";
-import { exportPdf, markSaved } from "@/modules/pdf/services/pdf.service";
+import { exportPdf, markSaved, setInkAnnotations } from "@/modules/pdf/services/pdf.service";
 import { getErrorMessage } from "@/shared/utils/error.utils";
 import { getFileName } from "@/shared/utils/path.utils";
 import type { DocumentSave, UseDocumentSaveOptions } from "../app.types";
 
 /**
  * "Save" and "Save as…" for one document: pdf.js produces the bytes with the
- * filled form fields, Rust writes them. Lives in the app layer because it joins
+ * filled form fields and the drawn strokes, Rust writes them. Lives in the app layer because it joins
  * the pdf module (export) and the document module (dialog, writing).
  */
-export function useDocumentSave({ document, pdf, onSaved }: UseDocumentSaveOptions): DocumentSave {
-  const isModified = useFormModified(pdf);
+export function useDocumentSave({ document, pdf, onSaved, annotations }: UseDocumentSaveOptions): DocumentSave {
+  const isModified = useFormModified(pdf) || annotations.isModified;
+  const { strokes, markSaved: markAnnotationsSaved } = annotations;
   const [error, setError] = useState<string | null>(null);
   // A ref, not state: a second Ctrl+S in the same tick must already see it.
   const isSaving = useRef(false);
 
   const saveTo = useCallback(
     async (path: string) => {
+      await setInkAnnotations(pdf, strokes);
       const size = await writeDocument(path, await exportPdf(pdf));
       markSaved(pdf);
+      markAnnotationsSaved();
       onSaved({ ...document, path, name: getFileName(path), size });
     },
-    [pdf, document, onSaved],
+    [pdf, strokes, document, onSaved, markAnnotationsSaved],
   );
 
   const run = useCallback((action: () => Promise<void>) => {

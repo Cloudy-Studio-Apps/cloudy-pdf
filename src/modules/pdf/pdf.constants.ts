@@ -22,6 +22,12 @@ export const READ_DOCUMENT_RANGE_COMMAND = "read_document_range";
 export const CLOSE_DOCUMENT_COMMAND = "close_document";
 
 /**
+ * Keys of new annotations in pdf.js's annotationStorage must start with this
+ * prefix (pdf.js's `AnnotationEditorPrefix`), or saveDocument ignores them.
+ */
+export const NEW_ANNOTATION_PREFIX = "pdfjs_internal_editor_";
+
+/**
  * The annotation layer needs a "link service" to wire up links. Links aren't
  * supported yet, so they're inert: no href, and clicking does nothing.
  */

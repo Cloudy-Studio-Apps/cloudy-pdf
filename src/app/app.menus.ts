@@ -1,4 +1,4 @@
-import { LuAppWindow, LuFolderSearch, LuHand, LuInfo, LuRotateCcw, LuRotateCw, LuTextCursor } from "react-icons/lu";
+import { LuAppWindow, LuFolderSearch, LuHand, LuInfo, LuPencil, LuRotateCcw, LuRotateCw, LuTextCursor } from "react-icons/lu";
 import { separator } from "@/modules/menu/menu.utils";
 import type { MenuEntry } from "@/modules/menu/menu.types";
 import { isDesktop } from "@/shared/utils/platform.utils";
@@ -6,7 +6,7 @@ import type { DocumentMenuOptions } from "./app.types";
 
 /**
  * The document toolbar's ⋯ menu:
- *   [Select · Hand │ phones only] Rotate left · Rotate right │ Document properties
+ *   [Select · Hand · Draw │ phones only] Rotate left · Rotate right │ Document properties
  *   │ Show in file manager · Open with… (desktop only)
  * Built here because it mixes viewer actions with OS actions from the system module.
  */
@@ -28,6 +28,13 @@ export function buildDocumentMenu(options: DocumentMenuOptions): MenuEntry[] {
           icon: LuHand,
           checked: tool === "hand",
           onSelect: () => options.onToolChange("hand"),
+        },
+        {
+          id: "tool-draw",
+          label: "Draw",
+          icon: LuPencil,
+          checked: tool === "draw",
+          onSelect: () => options.onToolChange("draw"),
         },
         separator("tools"),
       ];
