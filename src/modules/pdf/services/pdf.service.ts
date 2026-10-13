@@ -30,6 +30,8 @@ import type {
   PdfDocument,
   PdfInkStroke,
   PdfjsOutlineItem,
+  PdfPath,
+  PathPoint,
   PdfLoadJob,
   PdfMetadata,
   PdfOutlineNode,
@@ -269,35 +271,56 @@ export async function setInkAnnotations(pdf: PdfDocument, strokes: PdfInkStroke[
   );
 }
 
-/** One stroke in the serialized InkEditor shape, in PDF coordinates (origin bottom-left). */
+/**
+ * One stroke in the serialized InkEditor shape, in PDF coordinates (origin
+ * bottom-left). A stroked line goes in `paths`; a filled outline in `outlines`,
+ * which pdf.js writes the way it writes its own free-hand highlights (a filled
+ * shape with Multiply blending).
+ */
 function toInkData(page: PDFPageProxy, stroke: PdfInkStroke) {
   const viewport = page.getViewport({ scale: 1 });
-  const points = stroke.points.flatMap(({ x, y }) => viewport.convertToPdfPoint(x, y) as [number, number]);
+  const toPdf = ({ x, y }: PathPoint) => viewport.convertToPdfPoint(x, y) as [number, number];
+  const path = toPdfPath(stroke.path, toPdf);
+  const points = Float32Array.from(stroke.points.flatMap(toPdf));
 
-  // `lines` holds Bézier segments of 6 numbers: 2 control points, then the end
-  // point. NaN control points mean a straight line, so this draws a polyline.
-  const lines = new Float32Array(points.length * 3);
-  lines.fill(Number.NaN);
-  for (let i = 0; i < points.length; i += 2) {
-    lines[i * 3 + 4] = points[i];
-    lines[i * 3 + 5] = points[i + 1];
-  }
-
-  const half = stroke.thickness / 2;
-  const xs = points.filter((_, i) => i % 2 === 0);
-  const ys = points.filter((_, i) => i % 2 === 1);
+  // The rect must cover all the ink: every point of the path (a Bézier curve stays
+  // within its control points), plus half the line width for stroked lines.
+  const xs = path.filter((value, i) => i % 2 === 0 && !Number.isNaN(value));
+  const ys = path.filter((value, i) => i % 2 === 1 && !Number.isNaN(value));
+  const margin = stroke.filled ? 0 : stroke.thickness / 2;
   return {
     annotationType: AnnotationEditorType.INK,
     pageIndex: stroke.pageNumber - 1,
-    rect: [Math.min(...xs) - half, Math.min(...ys) - half, Math.max(...xs) + half, Math.max(...ys) + half],
+    rect: [Math.min(...xs) - margin, Math.min(...ys) - margin, Math.max(...xs) + margin, Math.max(...ys) + margin],
     rotation: 0,
     color: hexToRgb(stroke.color),
     thickness: stroke.thickness,
-    opacity: 1,
-    paths: { lines: [lines], points: [Float32Array.from(points)] },
+    opacity: stroke.opacity,
+    ...(stroke.filled
+      ? { outlines: { outline: path, points: [points] } }
+      : { paths: { lines: [path], points: [points] } }),
     structTreeParentId: null,
     popupRef: "",
   };
+}
+
+/**
+ * pdf.js's path format: groups of 6 numbers, two control points then the end
+ * point. The first group only has its end (the start); NaN control points mean
+ * a straight line.
+ */
+function toPdfPath({ start, segments }: PdfPath, toPdf: (point: PathPoint) => [number, number]): Float32Array {
+  const none = [Number.NaN, Number.NaN];
+  return Float32Array.from([
+    ...none,
+    ...none,
+    ...toPdf(start),
+    ...segments.flatMap(({ c1, c2, end }) => [
+      ...(c1 ? toPdf(c1) : none),
+      ...(c2 ? toPdf(c2) : none),
+      ...toPdf(end),
+    ]),
+  ]);
 }
 
 /** Calls `onChange(true)` when a field is first edited, `onChange(false)` after markSaved. Returns an unsubscribe. */

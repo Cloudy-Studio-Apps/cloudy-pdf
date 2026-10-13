@@ -1,11 +1,14 @@
 import { useCallback, useMemo, useRef } from "react";
+import { strokeShape } from "../ink.utils";
 import { cn } from "@/shared/utils/class-names.utils";
 import { useAnnotationsLayer } from "../hooks/useAnnotationsLayer";
 import { useStrokeDrawing } from "../hooks/useStrokeDrawing";
 import { useStrokeTransform } from "../hooks/useStrokeTransform";
-import { pageTransform, toSvgPath } from "../annotations.utils";
-import type { AnnotationOverlayProps, PagePoint } from "../annotations.types";
+import { PENS } from "../annotations.constants";
+import { pageTransform } from "../annotations.utils";
+import type { AnnotationOverlayProps, InkAnnotation } from "../annotations.types";
 import { InkPath } from "./InkPath";
+import { InkShape } from "./InkShape";
 import { SelectionBox } from "./SelectionBox";
 
 /**
@@ -29,8 +32,30 @@ export function AnnotationOverlay({ pageNumber, size, scale, rotation }: Annotat
   const page = useMemo(() => pageTransform(size, rotation), [size, rotation]);
 
   const { add, style } = layer;
-  const onFinish = useCallback((points: PagePoint[]) => add({ pageNumber, points, ...style }), [add, pageNumber, style]);
-  const drawing = useStrokeDrawing({ groupRef, size, enabled: isDrawing, onFinish });
+  const pen = PENS[style.pen];
+  const thickness = pen.thicknesses[style.size];
+  const onFinish = useCallback(
+    (line: Pick<InkAnnotation, "points" | "widths">) =>
+      add({ pageNumber, pen: style.pen, color: style.color, thickness, ...line }),
+    [add, pageNumber, style, thickness],
+  );
+  const drawing = useStrokeDrawing({ groupRef, size, enabled: isDrawing, pen, thickness, onFinish });
+  // The stroke being drawn, shaped exactly as it will be once released.
+  const { draft } = drawing;
+  const live = useMemo(
+    () =>
+      draft &&
+      strokeShape({
+        id: "",
+        pageNumber,
+        pen: style.pen,
+        color: style.color,
+        thickness,
+        points: draft.points,
+        widths: draft.widths ?? undefined,
+      }),
+    [draft, pageNumber, style, thickness],
+  );
   const transform = useStrokeTransform({ groupRef, size, onSelect: layer.select, onCommit: layer.update });
   // While moving or resizing, the stroke is shown (and boxed) as it would be if released now.
   const { preview } = transform;
@@ -58,16 +83,7 @@ export function AnnotationOverlay({ pageNumber, size, scale, rotation }: Annotat
           <InkPath key={stroke.id} stroke={stroke} interactive={layer.mode === "select"} transform={transform} />
         ))}
         {selected && <SelectionBox stroke={selected} scale={scale} rotation={rotation} transform={transform} />}
-        {drawing.points && (
-          <path
-            d={toSvgPath(drawing.points)}
-            fill="none"
-            stroke={style.color}
-            strokeWidth={style.thickness}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
+        {live && <InkShape shape={live} color={style.color} thickness={thickness} />}
       </g>
     </svg>
   );

@@ -5,7 +5,8 @@
  * module to write into the file on save.
  */
 import type { PointerEvent, RefObject } from "react";
-import type { PageSize } from "@/modules/pdf/pdf.types";
+import type { IconType } from "react-icons";
+import type { PageSize, PdfPath } from "@/modules/pdf/pdf.types";
 import type { KeyboardShortcut } from "@/shared/keyboard/keyboard.types";
 import type { Rotation } from "@/modules/viewer/viewer.types";
 
@@ -19,19 +20,72 @@ export interface PagePoint {
   y: number;
 }
 
-/** Colour and line width of a stroke. Width is in page space (PDF points). */
-export interface InkStyle {
+export type PenKind = "pen" | "smooth" | "highlighter" | "fountain";
+
+/** How a kind of pen draws. Every pen-specific behaviour is read from here. */
+export interface PenDefinition {
+  id: PenKind;
+  label: string;
+  icon: IconType;
+  /** Steadies the pointer while drawing and fits curves on release. */
+  smooth: boolean;
+  /** Width follows stylus pressure, or speed with a mouse or finger. */
+  variableWidth: boolean;
+  /** Drawn and saved as a filled outline rather than a stroked line. */
+  filled: boolean;
+  /** Mixed with the page (multiply) so text under it stays readable. */
+  multiply: boolean;
+  opacity: number;
+  /** Width choices in PDF points: fine, medium, bold. */
+  thicknesses: readonly [number, number, number];
+}
+
+/** The Draw tool's current choices. `size` indexes the pen's `thicknesses`. */
+export interface PenStyle {
+  pen: PenKind;
   /** CSS hex colour, "#rrggbb". */
   color: string;
-  thickness: number;
+  size: number;
 }
 
 /** One freehand stroke: what a single press-drag-release draws. */
-export interface InkAnnotation extends InkStyle {
+export interface InkAnnotation {
   id: string;
   /** 1-based. */
   pageNumber: number;
+  pen: PenKind;
+  color: string;
+  /** Line width in page space (PDF points); the base width for variable-width pens. */
+  thickness: number;
   points: PagePoint[];
+  /** Width at each point, for variable-width pens only. */
+  widths?: number[];
+}
+
+/** A stroke being drawn: where it is, and the pointer's latest state. */
+export interface StrokeDraft {
+  points: PagePoint[];
+  widths: number[] | null;
+  /** The pointer's real position; with a stabilizer the line trails behind it. */
+  target: PagePoint;
+  /** Time of the last sample, in ms. */
+  time: number;
+}
+
+/** One pointer position as it arrives. */
+export interface StrokeSample {
+  point: PagePoint;
+  time: number;
+  /** 0–1 from a stylus; null for mouse and touch, which report no real pressure. */
+  pressure: number | null;
+}
+
+/** How a stroke is drawn on screen and written to the PDF (same geometry for both). */
+export interface StrokeShape {
+  path: PdfPath;
+  filled: boolean;
+  opacity: number;
+  multiply: boolean;
 }
 
 /** A stroke before it gets its id. */
@@ -67,8 +121,8 @@ export interface AnnotationsControl {
   annotations: InkAnnotation[];
   selectedId: string | null;
   select: (id: string | null) => void;
-  style: InkStyle;
-  setStyle: (style: InkStyle) => void;
+  style: PenStyle;
+  setStyle: (style: PenStyle) => void;
   add: (annotation: NewInkAnnotation) => void;
   /** Replaces a stroke with a new version of itself (moved or resized). */
   update: (stroke: InkAnnotation) => void;
@@ -94,7 +148,7 @@ export interface UseAnnotationsOptions {
 export interface AnnotationsLayerValue {
   annotations: InkAnnotation[];
   selectedId: string | null;
-  style: InkStyle;
+  style: PenStyle;
   mode: AnnotationMode;
   add: (annotation: NewInkAnnotation) => void;
   update: (stroke: InkAnnotation) => void;
@@ -122,12 +176,15 @@ export interface UseStrokeDrawingOptions {
   groupRef: RefObject<SVGGElement | null>;
   size: PageSize;
   enabled: boolean;
-  onFinish: (points: PagePoint[]) => void;
+  pen: PenDefinition;
+  thickness: number;
+  /** A finished stroke's line, already smoothed for smoothing pens. */
+  onFinish: (stroke: Pick<InkAnnotation, "points" | "widths">) => void;
 }
 
 /** Pointer handlers for the overlay SVG while drawing, plus the stroke being drawn. */
 export interface StrokeDrawing {
-  points: PagePoint[] | null;
+  draft: StrokeDraft | null;
   onPointerDown: (event: PointerEvent<SVGSVGElement>) => void;
   onPointerMove: (event: PointerEvent<SVGSVGElement>) => void;
   onPointerUp: (event: PointerEvent<SVGSVGElement>) => void;
@@ -177,6 +234,13 @@ export interface InkPathProps {
   transform: StrokeTransform;
 }
 
+export interface InkShapeProps {
+  shape: StrokeShape;
+  color: string;
+  /** Line width, for stroked shapes. */
+  thickness: number;
+}
+
 export interface SelectionBoxProps {
   stroke: InkAnnotation;
   /** Zoom: handles keep the same size on screen. */
@@ -209,6 +273,9 @@ export interface SwatchButtonProps {
 }
 
 export interface ThicknessButtonProps {
+  /** Index among the pen's widths: fine, medium, bold. */
+  size: number;
+  /** The real width, in points (tooltip). */
   thickness: number;
   active: boolean;
   onClick: () => void;

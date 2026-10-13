@@ -3,7 +3,7 @@ import { useKeyboardShortcuts } from "@/shared/keyboard/useKeyboardShortcuts";
 import {
   ANNOTATION_ATTRIBUTE,
   ANNOTATION_SHORTCUTS,
-  DEFAULT_INK_STYLE,
+  DEFAULT_PEN_STYLE,
   EMPTY_HISTORY,
 } from "../annotations.constants";
 import {
@@ -24,7 +24,7 @@ import type { AnnotationsControl, InkAnnotation, NewInkAnnotation, UseAnnotation
 export function useAnnotations({ isActive, mode }: UseAnnotationsOptions): AnnotationsControl {
   const [history, setHistory] = useState(EMPTY_HISTORY);
   const [selected, setSelected] = useState<string | null>(null);
-  const [style, setStyle] = useState(DEFAULT_INK_STYLE);
+  const [style, setStyle] = useState(DEFAULT_PEN_STYLE);
 
   // Undo can remove the selected stroke; the selection then simply resolves to nothing.
   const selectedId = history.present.some((annotation) => annotation.id === selected) ? selected : null;

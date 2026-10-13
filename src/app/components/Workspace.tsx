@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnnotationsContext } from "@/modules/annotations/annotations.context";
 import { AnnotationBar } from "@/modules/annotations/components/AnnotationBar";
 import { AnnotationOverlay } from "@/modules/annotations/components/AnnotationOverlay";
+import { toPdfStroke } from "@/modules/annotations/ink.utils";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import { OutlinePanel } from "@/modules/outline/components/OutlinePanel";
 import type { PageTarget } from "@/modules/pdf/pdf.types";
@@ -49,7 +50,8 @@ export function Workspace({ document, pdf, defaultPageSize, isActive, host }: Wo
   const { setCommands, onSaved } = host;
   const saved = useCallback((next: OpenedDocument) => onSaved(document.id, next), [onSaved, document.id]);
   const annotations = useDocumentAnnotations(viewer.tool, isActive);
-  const { annotations: strokes, isModified: annotationsModified, markSaved } = annotations.control;
+  const { annotations: inks, isModified: annotationsModified, markSaved } = annotations.control;
+  const strokes = useMemo(() => inks.map(toPdfStroke), [inks]);
   const saver = useDocumentSave({
     document,
     pdf,

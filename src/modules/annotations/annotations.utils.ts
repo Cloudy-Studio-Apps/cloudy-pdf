@@ -76,9 +76,14 @@ export function pointBounds(points: PagePoint[]): Bounds {
   return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
 }
 
-/** Box around the stroke, widened by half its line width so the box covers the ink. */
+/** Half the widest part of the stroke: how far its ink reaches from the centre line. */
+export function inkRadius(stroke: InkAnnotation): number {
+  return (stroke.widths ? Math.max(...stroke.widths) : stroke.thickness) / 2;
+}
+
+/** Box around the stroke, widened by half its widest line so the box covers the ink. */
 export function strokeBounds(stroke: InkAnnotation): Bounds {
-  const half = stroke.thickness / 2;
+  const half = inkRadius(stroke);
   const { minX, minY, maxX, maxY } = pointBounds(stroke.points);
   return { minX: minX - half, minY: minY - half, maxX: maxX + half, maxY: maxY + half };
 }
@@ -170,11 +175,6 @@ export function clampToPage(point: PagePoint, page: PageSize): PagePoint {
 
 export function distance(a: PagePoint, b: PagePoint): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-/** SVG path data through the points: "M x y L x y …". */
-export function toSvgPath(points: PagePoint[]): string {
-  return points.map(({ x, y }, index) => `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`).join("");
 }
 
 /**

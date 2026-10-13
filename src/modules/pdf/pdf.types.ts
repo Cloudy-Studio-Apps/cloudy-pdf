@@ -144,9 +144,28 @@ export interface TextLayerHookOptions {
   enabled: boolean;
 }
 
+/** A point in the page's viewport at scale 1 (top-left origin, y down). */
+export interface PathPoint {
+  x: number;
+  y: number;
+}
+
+/** A straight line to `end`, or a cubic Bézier curve when both control points are set. */
+export interface PathSegment {
+  c1?: PathPoint;
+  c2?: PathPoint;
+  end: PathPoint;
+}
+
+/** An open line or a closed outline, as lines and curves. */
+export interface PdfPath {
+  start: PathPoint;
+  segments: PathSegment[];
+}
+
 /**
- * A freehand stroke to write into the PDF as an Ink annotation. Points are in
- * the page's viewport at scale 1 (top-left origin, y down); thickness in points.
+ * A freehand stroke to write into the PDF as an Ink annotation: either a stroked
+ * line of fixed width, or a filled outline (variable width, or a highlighter).
  */
 export interface PdfInkStroke {
   id: string;
@@ -154,8 +173,14 @@ export interface PdfInkStroke {
   pageNumber: number;
   /** "#rrggbb". */
   color: string;
+  /** Line width in points (stroked lines). */
   thickness: number;
-  points: { x: number; y: number }[];
+  opacity: number;
+  /** true: `path` is a closed outline to fill. false: a line to stroke. */
+  filled: boolean;
+  path: PdfPath;
+  /** The centre line, for the annotation's InkList (what readers use to edit or describe it). */
+  points: PathPoint[];
 }
 
 /** The change hooks of pdf.js's AnnotationStorage, with their real types. */

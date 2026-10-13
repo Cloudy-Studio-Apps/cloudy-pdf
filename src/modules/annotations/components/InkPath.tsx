@@ -1,32 +1,27 @@
 import { useMemo } from "react";
 import { ANNOTATION_ATTRIBUTE, HIT_PADDING } from "../annotations.constants";
-import { toSvgPath } from "../annotations.utils";
+import { inkRadius } from "../annotations.utils";
+import { lineThrough, strokeShape, toSvgPath } from "../ink.utils";
 import type { InkPathProps } from "../annotations.types";
+import { InkShape } from "./InkShape";
 
 /**
- * One stroke. In select mode a wider, invisible copy of the path is the part
- * that catches presses, so thin lines are easy to grab.
+ * One stroke. In select mode a wider, invisible copy of its centre line is the
+ * part that catches presses, so thin lines are easy to grab.
  */
 export function InkPath({ stroke, interactive, transform }: InkPathProps) {
-  const d = useMemo(() => toSvgPath(stroke.points), [stroke.points]);
+  const shape = useMemo(() => strokeShape(stroke), [stroke]);
+  const hitPath = useMemo(() => toSvgPath(lineThrough(stroke.points)), [stroke.points]);
 
   return (
     <g {...{ [ANNOTATION_ATTRIBUTE]: stroke.id }}>
-      <path
-        d={d}
-        fill="none"
-        stroke={stroke.color}
-        strokeWidth={stroke.thickness}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        pointerEvents="none"
-      />
+      <InkShape shape={shape} color={stroke.color} thickness={stroke.thickness} />
       {interactive && (
         <path
-          d={d}
+          d={hitPath}
           fill="none"
           stroke="transparent"
-          strokeWidth={stroke.thickness + HIT_PADDING * 2}
+          strokeWidth={(inkRadius(stroke) + HIT_PADDING) * 2}
           strokeLinecap="round"
           strokeLinejoin="round"
           pointerEvents="stroke"

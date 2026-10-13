@@ -1,8 +1,9 @@
 import { cn } from "@/shared/utils/class-names.utils";
+import { SIZE_PREVIEWS } from "../annotations.constants";
 import type { ThicknessButtonProps } from "../annotations.types";
 
-/** A line width choice, previewed as a short line of that width. */
-export function ThicknessButton({ thickness, active, onClick }: ThicknessButtonProps) {
+/** A line width choice (fine / medium / bold of the current pen), previewed as a short line. */
+export function ThicknessButton({ size, thickness, active, onClick }: ThicknessButtonProps) {
   return (
     <button
       type="button"
@@ -11,13 +12,12 @@ export function ThicknessButton({ thickness, active, onClick }: ThicknessButtonP
       title={`${thickness} pt`}
       onClick={onClick}
       className={cn(
-        "inline-flex size-7 items-center justify-center transition-colors",
+        "inline-flex size-7 shrink-0 items-center justify-center transition-colors",
         "focus-visible:outline-2 focus-visible:outline-accent",
         active ? "bg-hover" : "hover:bg-hover",
       )}
     >
-      {/* At least 1px tall, so the finest choice is still visible. */}
-      <span className="w-4 bg-ink" style={{ height: Math.max(1, thickness) }} />
+      <span className="w-4 bg-ink" style={{ height: SIZE_PREVIEWS[size] }} />
     </button>
   );
 }

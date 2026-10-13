@@ -1,18 +1,20 @@
 import { LuRedo2, LuTrash2, LuUndo2 } from "react-icons/lu";
 import { IconButton } from "@/shared/ui/IconButton";
 import { formatShortcut } from "@/shared/keyboard/keyboard.utils";
-import { ANNOTATION_ATTRIBUTE, ANNOTATION_SHORTCUTS, INK_COLORS, INK_THICKNESSES } from "../annotations.constants";
+import { cn } from "@/shared/utils/class-names.utils";
+import { ANNOTATION_ATTRIBUTE, ANNOTATION_SHORTCUTS, INK_COLORS, PENS } from "../annotations.constants";
 import type { AnnotationBarProps } from "../annotations.types";
 import { SwatchButton } from "./SwatchButton";
 import { ThicknessButton } from "./ThicknessButton";
 
 /**
- * Small floating bar over the pages: pen colour and width (Draw tool), undo /
+ * Small floating bar over the pages: pen, colour and width (Draw tool), undo /
  * redo, and delete for the selected stroke. The buttons matter on phones, where
  * there's no keyboard for Ctrl+Z or Delete.
  */
 export function AnnotationBar({ annotations, showStyle }: AnnotationBarProps) {
   const { style, setStyle, selectedId } = annotations;
+  const pen = PENS[style.pen];
 
   return (
     <div
@@ -20,10 +22,22 @@ export function AnnotationBar({ annotations, showStyle }: AnnotationBarProps) {
       aria-label="Drawing"
       // Counts as part of the annotations: pressing its buttons mustn't deselect the stroke first.
       {...{ [ANNOTATION_ATTRIBUTE]: "toolbar" }}
-      className="flex items-center gap-1 border border-border bg-surface px-2 py-1 shadow-sm"
+      // Scrolls sideways on narrow phones instead of overflowing the screen.
+      className="flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto border border-border bg-surface px-2 py-1 shadow-sm"
     >
       {showStyle && (
         <>
+          {Object.values(PENS).map(({ id, label, icon }) => (
+            <IconButton
+              key={id}
+              icon={icon}
+              label={label}
+              aria-pressed={style.pen === id}
+              className={cn("shrink-0", style.pen === id && "bg-hover text-accent hover:text-accent")}
+              onClick={() => setStyle({ ...style, pen: id })}
+            />
+          ))}
+          <span className="mx-1 h-5 w-px shrink-0 bg-border" />
           {INK_COLORS.map((color) => (
             <SwatchButton
               key={color}
@@ -32,16 +46,17 @@ export function AnnotationBar({ annotations, showStyle }: AnnotationBarProps) {
               onClick={() => setStyle({ ...style, color })}
             />
           ))}
-          <span className="mx-1 h-5 w-px bg-border" />
-          {INK_THICKNESSES.map((thickness) => (
+          <span className="mx-1 h-5 w-px shrink-0 bg-border" />
+          {pen.thicknesses.map((thickness, size) => (
             <ThicknessButton
-              key={thickness}
+              key={size}
+              size={size}
               thickness={thickness}
-              active={style.thickness === thickness}
-              onClick={() => setStyle({ ...style, thickness })}
+              active={style.size === size}
+              onClick={() => setStyle({ ...style, size })}
             />
           ))}
-          <span className="mx-1 h-5 w-px bg-border" />
+          <span className="mx-1 h-5 w-px shrink-0 bg-border" />
         </>
       )}
       <IconButton

@@ -7,3 +7,8 @@ export function clamp(value: number, min: number, max: number): number {
 export function toPercent(ratio: number): string {
   return `${Math.round(ratio * 100)}%`;
 }
+
+/** The value `t` (0–1) of the way from `from` to `to`. */
+export function lerp(from: number, to: number, t: number): number {
+  return from + (to - from) * t;
+}
