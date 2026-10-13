@@ -28,3 +28,9 @@ export type VisibilityCallback = (visible: boolean) => void;
 
 /** Starts watching an element; returns a function that stops watching it. */
 export type ObserveVisibility = (element: Element, onChange: VisibilityCallback) => () => void;
+
+/** Width and height of an element, in CSS pixels. */
+export interface ElementSize {
+  width: number;
+  height: number;
+}

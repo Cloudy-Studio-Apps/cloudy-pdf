@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { ShortcutBinding } from "./keyboard.types";
-import { matchesShortcut } from "./keyboard.utils";
+import { isTypingTarget, matchesShortcut } from "./keyboard.utils";
 
 /**
  * Registers global keyboard shortcuts while the calling component is mounted.
@@ -16,7 +16,12 @@ export function useKeyboardShortcuts(bindings: ShortcutBinding[]): void {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const binding = bindingsRef.current.find(({ shortcut }) => matchesShortcut(event, shortcut));
+      const typing = isTypingTarget(event);
+      const binding = bindingsRef.current.find(
+        ({ shortcut }) =>
+          // While typing, only modifier shortcuts and Escape apply; plain keys go to the field.
+          (!typing || shortcut.mod || shortcut.key === "Escape") && matchesShortcut(event, shortcut),
+      );
       if (!binding) return;
       // Stop the webview's default behaviour (e.g. Ctrl+= zooming the whole UI).
       event.preventDefault();

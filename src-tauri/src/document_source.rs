@@ -19,8 +19,8 @@ use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 use tauri::ipc::Response;
-use tauri::{AppHandle, Runtime, State};
-use tauri_plugin_fs::{FsExt, OpenOptions};
+use tauri::{AppHandle, Manager, Runtime, State};
+use tauri_plugin_fs::{FilePath, FsExt, OpenOptions};
 
 use crate::scope::ensure_allowed;
 
@@ -41,18 +41,7 @@ struct OpenSource {
 
 impl OpenSource {
     fn open<R: Runtime>(app: &AppHandle<R>, path: &str) -> Result<Self, String> {
-        let file_path = ensure_allowed(app, path)?;
-        // Goes through the fs plugin so Android `content://` URIs work too (it asks the
-        // ContentResolver for a file descriptor); on desktop it's a plain `File::open`.
-        // `read(true)` must be explicit: despite the plugin's docs, `OpenOptions::new()`
-        // is a derived Default with every flag false ("read defaults to true" only
-        // applies when the options are deserialized from JS).
-        let mut options = OpenOptions::new();
-        options.read(true);
-        let mut file = app
-            .fs()
-            .open(file_path, options)
-            .map_err(|error| error.to_string())?;
+        let mut file = open_file(app, path)?;
         let metadata = file.metadata().map_err(|error| error.to_string())?;
 
         if metadata.is_file() {
@@ -76,6 +65,57 @@ impl OpenSource {
             Source::Memory(bytes) => Ok(bytes[start as usize..end as usize].to_vec()),
         }
     }
+}
+
+/// Opens a file for reading, checking the scope first.
+///
+/// Goes through the fs plugin so Android `content://` URIs work too (it asks the
+/// ContentResolver for a file descriptor); on desktop it's a plain `File::open`.
+///
+/// Android only grants *temporary* access to a URI received with "Open with…",
+/// and revokes it when the task changes (switching apps, a reload). Opening it
+/// again after that fails with "No content provider". An already open descriptor
+/// keeps working though, so the first one for each URI is kept in
+/// [`DocumentSources::granted`] and later opens get a duplicate of it.
+pub(crate) fn open_file<R: Runtime>(app: &AppHandle<R>, path: &str) -> Result<File, String> {
+    let file_path = ensure_allowed(app, path)?;
+    let is_content_uri = matches!(&file_path, FilePath::Url(url) if url.scheme() == "content");
+    let granted = &app.state::<DocumentSources>().granted;
+
+    if is_content_uri {
+        let granted = granted.lock().map_err(|error| error.to_string())?;
+        if let Some(file) = granted.get(path) {
+            return file.try_clone().map_err(|error| error.to_string());
+        }
+    }
+
+    // `read(true)` must be explicit: despite the plugin's docs, `OpenOptions::new()`
+    // is a derived Default with every flag false ("read defaults to true" only
+    // applies when the options are deserialized from JS).
+    let mut options = OpenOptions::new();
+    options.read(true);
+    let file = app
+        .fs()
+        .open(file_path, options)
+        .map_err(|error| error.to_string())?;
+
+    // Pipes can't be kept: they can be read only once, and the first reader drains them.
+    let is_regular = file.metadata().is_ok_and(|metadata| metadata.is_file());
+    if is_content_uri && is_regular {
+        let copy = file.try_clone().map_err(|error| error.to_string())?;
+        granted
+            .lock()
+            .map_err(|error| error.to_string())?
+            .insert(path.to_owned(), copy);
+    }
+    Ok(file)
+}
+
+/// Opens a URI the OS just handed over, while its temporary grant is still valid
+/// (see [`open_file`]). Errors are ignored here: the frontend's own open reports them.
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "macos"))]
+pub fn retain_grant<R: Runtime>(app: &AppHandle<R>, uri: &str) {
+    let _ = open_file(app, uri);
 }
 
 #[cfg(unix)]
@@ -103,6 +143,10 @@ fn read_exact_at(file: &File, mut buffer: &mut [u8], mut offset: u64) -> io::Res
 pub struct DocumentSources {
     next_id: AtomicU32,
     open: Mutex<HashMap<u32, Arc<OpenSource>>>,
+    /// Android: a descriptor per `content://` URI, kept for the life of the process
+    /// so the file stays readable after its temporary grant is revoked. Not cleared
+    /// on reload: restoring the open tabs after a reload depends on it.
+    granted: Mutex<HashMap<String, File>>,
 }
 
 impl DocumentSources {
@@ -177,7 +221,7 @@ pub async fn close_document(sources: State<'_, DocumentSources>, id: u32) -> Res
     Ok(())
 }
 
-async fn blocking<T: Send + 'static>(
+pub(crate) async fn blocking<T: Send + 'static>(
     work: impl FnOnce() -> Result<T, String> + Send + 'static,
 ) -> Result<T, String> {
     tauri::async_runtime::spawn_blocking(work)

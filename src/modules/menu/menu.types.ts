@@ -3,7 +3,7 @@
  * (MenuEntry[]) and the components render them. The same entries work in the
  * menu bar dropdowns and in right-click context menus.
  */
-import type { CSSProperties, MouseEvent, Ref } from "react";
+import type { CSSProperties, MouseEvent, ReactNode, Ref } from "react";
 import type { IconType } from "react-icons";
 import type { KeyboardShortcut } from "@/shared/keyboard/keyboard.types";
 import type { Point } from "@/shared/hooks/hooks.types";
@@ -19,6 +19,8 @@ export interface MenuItemDefinition {
   disabled?: boolean;
   /** Destructive action (shown in red), e.g. "Remove from history". */
   danger?: boolean;
+  /** Makes the item a choice with a check mark (e.g. the current zoom). */
+  checked?: boolean;
   onSelect: () => void;
 }
 
@@ -87,4 +89,16 @@ export interface ContextMenuProps {
   position: MenuPosition;
   entries: MenuEntry[];
   onClose: () => void;
+}
+
+/** A button that opens a menu below it (toolbar menus). */
+export interface DropdownMenuProps {
+  /** Accessible name and tooltip of the button. */
+  label: string;
+  /** Button content (icon, text…). */
+  trigger: ReactNode;
+  entries: MenuEntry[];
+  /** Which edge of the button the menu lines up with. */
+  align?: "start" | "end";
+  className?: string;
 }

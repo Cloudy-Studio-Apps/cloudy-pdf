@@ -1,14 +1,17 @@
-/** Types for the viewer module (displaying a loaded PDF). */
-import type { RefObject } from "react";
+/** Types for the viewer module (displaying a loaded PDF and its controls). */
+import type { ReactNode } from "react";
+import type { IconType } from "react-icons";
 import type { OpenedDocument } from "@/modules/document/document.types";
+import type { MenuEntry } from "@/modules/menu/menu.types";
 import type { PageSize, PdfDocument } from "@/modules/pdf/pdf.types";
+import type { KeyboardShortcut } from "@/shared/keyboard/keyboard.types";
 import type { ObserveVisibility, Point } from "@/shared/hooks/hooks.types";
 
 /**
- * "fit-width": scale follows the window width (recomputed on resize).
- * "custom": a fixed scale chosen with +/−.
+ * "fit-width" / "fit-page": scale follows the viewport size (recomputed on resize).
+ * "custom": a fixed scale chosen by the user.
  */
-export type ZoomMode = "fit-width" | "custom";
+export type ZoomMode = "fit-width" | "fit-page" | "custom";
 
 export interface ZoomState {
   mode: ZoomMode;
@@ -26,7 +29,27 @@ export interface ZoomControl {
   zoomIn: () => void;
   zoomOut: () => void;
   fitWidth: () => void;
+  fitPage: () => void;
+  /** Fixed zoom, e.g. 1 for "Actual size". Clamped to the zoom limits. */
+  setScale: (scale: number) => void;
 }
+
+/** Clockwise view rotation, applied to every page on top of its own rotation. */
+export type Rotation = 0 | 90 | 180 | 270;
+
+export interface RotationControl {
+  rotation: Rotation;
+  rotateClockwise: () => void;
+  rotateCounterclockwise: () => void;
+}
+
+/** "continuous": all pages stacked. "single": one page at a time. */
+export type PageDisplay = "continuous" | "single";
+
+/** What a mouse drag on the pages does: select text, or pan. */
+export type ViewerTool = "select" | "hand";
+
+export type SidePanelId = "thumbnails" | "bookmarks";
 
 /** Returned by useScrollAnchor. */
 export interface ScrollAnchor {
@@ -34,11 +57,20 @@ export interface ScrollAnchor {
   setAnchor: (point: Point) => void;
 }
 
-/** Current page and a way to jump to another (returned by usePageNavigation). */
+/** Current page and ways to move (returned by usePageNavigation). */
 export interface PageNavigation {
   currentPage: number;
   pageCount: number;
-  goToPage: (pageNumber: number) => void;
+  /** Scrolls to a page; `topRatio` (0–1) picks a point further down it. */
+  goToPage: (pageNumber: number, topRatio?: number) => void;
+  /** Like goToPage, but doesn't move if the page is already on screen. */
+  showPage: (pageNumber: number) => void;
+}
+
+/** A pending scroll, applied after the layout that shows the page exists. */
+export interface ScrollRequest {
+  pageNumber: number;
+  topRatio: number;
 }
 
 /**
@@ -60,27 +92,88 @@ export interface PageSizes {
   reportSize: PageSizeReporter;
 }
 
-export interface DocumentViewerProps {
-  document: OpenedDocument;
-  /** False while the viewer's tab is in the background; disables its shortcuts and canvases. */
+/** A character range inside one text item (one span of a page's text layer). */
+export interface TextRange {
+  itemIndex: number;
+  start: number;
+  end: number;
+}
+
+/** One search match on a page. `id` is unique per search, so the page knows when the current match changes. */
+export interface PageHighlight {
+  id: string;
+  ranges: TextRange[];
+  current: boolean;
+}
+
+export type HighlightsByPage = ReadonlyMap<number, readonly PageHighlight[]>;
+
+export interface UseViewerStateOptions {
+  pdf: PdfDocument;
+  defaultPageSize: PageSize;
+  /** False while the tab is in the background: no shortcuts, no canvases. */
   isActive: boolean;
 }
 
-export interface ViewerCanvasProps {
+/** One document's view: returned by useViewerState, rendered by ViewerPages. */
+export interface ViewerState {
   pdf: PdfDocument;
-  /** Page 1's size: the starting size of every page, and what fit-width fits. */
-  defaultPageSize: PageSize;
   isActive: boolean;
+  /** Callback ref for the scrolling element. */
+  scrollRootRef: (element: HTMLDivElement | null) => void;
+  zoom: ZoomControl;
+  navigation: PageNavigation;
+  pageSizes: PageSizes;
+  rotation: RotationControl;
+  display: PageDisplay;
+  setDisplay: (display: PageDisplay) => void;
+  tool: ViewerTool;
+  setTool: (tool: ViewerTool) => void;
+  /** True while the hand tool is dragging. */
+  isPanning: boolean;
+  /** Shared observer telling pages when they're near the screen; null until the scroll area exists. */
+  observe: ObserveVisibility | null;
+}
+
+export interface ViewerShortcutsOptions {
+  zoom: ZoomControl;
+  navigation: PageNavigation;
+  display: PageDisplay;
+  enabled: boolean;
+}
+
+/** Shortcuts shown in the zoom menu and registered by useViewerShortcuts. */
+export interface ViewerShortcuts {
+  zoomIn: KeyboardShortcut;
+  zoomOut: KeyboardShortcut;
+  fitPage: KeyboardShortcut;
+  actualSize: KeyboardShortcut;
+  fitWidth: KeyboardShortcut;
+}
+
+/** A button of the tools rail or panel rail. */
+export interface RailItem<T extends string> {
+  id: T;
+  label: string;
+  icon: IconType;
+}
+
+export interface ViewerPagesProps {
+  viewer: ViewerState;
+  highlights: HighlightsByPage;
 }
 
 export interface PageListProps {
   pdf: PdfDocument;
   pageSizes: PageSize[];
   scale: number;
+  rotation: Rotation;
+  /** The page shown in single page display; null in continuous display. */
+  singlePage: number | null;
   /** Background tabs draw no canvases, which frees their memory. */
   isActive: boolean;
-  /** Shared observer telling each page when it's near the screen; null until the scroll area exists. */
   observe: ObserveVisibility | null;
+  highlights: HighlightsByPage;
   onPageSize: PageSizeReporter;
 }
 
@@ -89,18 +182,10 @@ export interface PdfPageProps {
   pageNumber: number;
   size: PageSize;
   scale: number;
+  rotation: Rotation;
   isActive: boolean;
   observe: ObserveVisibility | null;
-  onPageSize: PageSizeReporter;
-}
-
-export interface PageRenderOptions {
-  canvasRef: RefObject<HTMLCanvasElement | null>;
-  pdf: PdfDocument;
-  pageNumber: number;
-  scale: number;
-  /** Render only when true (page near the screen, tab active). */
-  enabled: boolean;
+  highlights: readonly PageHighlight[];
   onPageSize: PageSizeReporter;
 }
 
@@ -120,4 +205,67 @@ export interface PageNavigatorProps {
 export interface ViewerMessageProps {
   title: string;
   description?: string;
+}
+
+export interface DocToolbarProps {
+  title: string;
+  zoom: ZoomControl;
+  display: PageDisplay;
+  onDisplayChange: (display: PageDisplay) => void;
+  onRotate: () => void;
+  onSearch: () => void;
+  searchShortcut: KeyboardShortcut;
+  onPrint: () => void;
+  printShortcut: KeyboardShortcut;
+  /** Entries of the ⋯ menu (built by the app, which knows the OS actions). */
+  moreEntries: MenuEntry[];
+}
+
+export interface SearchTriggerProps {
+  shortcut: KeyboardShortcut;
+  onClick: () => void;
+}
+
+export interface RailButtonProps {
+  icon: IconType;
+  label: string;
+  active?: boolean;
+  /** Shown but not usable (e.g. a tool that's coming soon); keeps its tooltip. */
+  unavailable?: boolean;
+  onClick?: () => void;
+}
+
+export interface ToolsRailProps {
+  tool: ViewerTool;
+  onToolChange: (tool: ViewerTool) => void;
+}
+
+export interface PanelRailProps {
+  active: SidePanelId | null;
+  onToggle: (panel: SidePanelId) => void;
+}
+
+export interface SidePanelProps {
+  panel: SidePanelId;
+  onClose: () => void;
+  children: ReactNode;
+}
+
+export interface NoticeBarProps {
+  message: string;
+  onDismiss: () => void;
+}
+
+export interface DocumentPropertiesDialogProps {
+  open: boolean;
+  onClose: () => void;
+  pdf: PdfDocument;
+  document: OpenedDocument;
+  /** Page 1's size, shown as "Page size". */
+  pageSize: PageSize;
+}
+
+export interface PropertyRowProps {
+  label: string;
+  value: string | null;
 }

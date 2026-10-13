@@ -60,6 +60,17 @@ export function activateTab(state: TabsState, tabId: string): TabsState {
   return state.tabs.some((tab) => tab.id === tabId) ? { ...state, activeId: tabId } : state;
 }
 
+/**
+ * Points a document tab at a new version of its document: same tab, new
+ * path / name / size (after "Save as…" or a save that changed the size).
+ */
+export function updateDocumentTab(state: TabsState, tabId: string, document: OpenedDocument): TabsState {
+  const tabs = state.tabs.map((tab) =>
+    tab.id === tabId && isClosable(tab) ? { ...tab, title: document.name, document } : tab,
+  );
+  return { ...state, tabs };
+}
+
 /** The part of the tab state worth keeping across a reload. */
 export function toTabsSession(tabs: Tab[], activeTab: Tab): TabsSession {
   return {

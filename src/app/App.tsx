@@ -24,6 +24,7 @@ import { AppHeader } from "./components/AppHeader";
 import { TabContent } from "./components/TabContent";
 import { useAppMenus } from "./hooks/useAppMenus";
 import { useAppShortcuts } from "./hooks/useAppShortcuts";
+import { useDocumentCommands } from "./hooks/useDocumentCommands";
 import { useHomePage } from "./hooks/useHomePage";
 import { useTabsSession } from "./hooks/useTabsSession";
 import type { AppActions } from "./app.types";
@@ -50,6 +51,19 @@ export function App() {
 
   const opener = useOpenDocument({ onOpened, onError: onOpenError });
 
+  // A saved document may have a new path ("Save as…"): the tab follows it, and it goes to Recent.
+  const onSaved = useCallback(
+    (tabId: string, document: OpenedDocument) => {
+      tabs.updateDocument(tabId, document);
+      history.record(toHistoryEntry(document));
+    },
+    [tabs.updateDocument, history.record],
+  );
+  const documentCommands = useDocumentCommands(onSaved);
+  const activeDocument = documentCommands.get(tabs.activeTab.id);
+  const save = useCallback(() => activeDocument?.save(), [activeDocument]);
+  const saveAs = useCallback(() => activeDocument?.saveAs(), [activeDocument]);
+
   // Opens PDFs handed over by the OS ("Open with…" / default PDF reader).
   useOpenedFiles(opener.openPath);
 
@@ -64,6 +78,10 @@ export function App() {
     cycleTab: tabs.cycle,
     showAbout,
     canCloseTab: isClosable(tabs.activeTab),
+    save,
+    saveAs,
+    canSave: Boolean(activeDocument?.isModified),
+    canSaveAs: Boolean(activeDocument),
   };
   const menus = useAppMenus(actions);
   useAppShortcuts(actions);
@@ -85,7 +103,7 @@ export function App() {
           const isActive = tab.id === tabs.activeTab.id;
           return (
             <TabPanel key={tab.id} isActive={isActive}>
-              <TabContent tab={tab} isActive={isActive} home={home} />
+              <TabContent tab={tab} isActive={isActive} home={home} documentHost={documentCommands.host} />
             </TabPanel>
           );
         })}

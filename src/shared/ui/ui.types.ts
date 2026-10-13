@@ -25,4 +25,6 @@ export interface DialogProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Extra classes for the card, e.g. a wider width. */
+  className?: string;
 }

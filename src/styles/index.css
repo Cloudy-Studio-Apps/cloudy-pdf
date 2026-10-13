@@ -17,6 +17,9 @@
   --color-muted: #71717a; /* secondary text, idle icons */
   --color-subtle: #a1a1aa; /* hints, disabled text */
   --color-accent: #2563eb; /* focus rings */
+  --color-danger: #dc2626; /* errors */
+  --color-search-hit: rgb(250 204 21 / 0.45); /* search matches */
+  --color-search-current: rgb(234 88 12 / 0.55); /* the selected search match */
 
   /* Illustration animations → `animate-float`, `animate-blink`. */
   --animate-float: float 4s ease-in-out infinite;
@@ -57,5 +60,200 @@
   /* select-none: a desktop app should not let users highlight UI chrome like a web page. */
   body {
     @apply bg-surface text-ink font-sans text-[13px] antialiased select-none;
+  }
+}
+
+/*
+ * pdf.js text layer: invisible, selectable text positioned over each page canvas.
+ * A minimal subset of pdfjs-dist/web/pdf_viewer.css (that file styles pdf.js's
+ * whole viewer: annotations, editors…). Re-check it when upgrading pdf.js.
+ * pdf.js sets each span's --font-height / --scale-x / --rotate, and the layer's
+ * size from --total-scale-factor (set on the element by PdfPage).
+ */
+@layer components {
+  .textLayer {
+    position: absolute;
+    inset: 0;
+    overflow: clip;
+    line-height: 1;
+    text-align: initial;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-size-adjust: none;
+    -webkit-text-size-adjust: none;
+    forced-color-adjust: none;
+    transform-origin: 0 0;
+    z-index: 0;
+    --scale-round-x: 1px;
+    --scale-round-y: 1px;
+    --min-font-size: 1;
+    --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+    --min-font-size-inv: calc(1 / var(--min-font-size));
+  }
+
+  .textLayer :is(span, br) {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .textLayer > :not(.markedContent),
+  .textLayer .markedContent span:not(.markedContent) {
+    z-index: 1;
+    --font-height: 0;
+    font-size: calc(var(--text-scale-factor) * var(--font-height));
+    --scale-x: 1;
+    --rotate: 0deg;
+    transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+  }
+
+  .textLayer .markedContent {
+    display: contents;
+  }
+
+  .textLayer ::selection {
+    background: color-mix(in srgb, var(--color-accent), transparent 70%);
+    color: transparent;
+  }
+
+  .textLayer br::selection {
+    background: transparent;
+  }
+
+  /* Search matches: <mark> elements inside the spans (see applyHighlights). */
+  .textLayer mark {
+    color: transparent;
+    background: var(--color-search-hit);
+  }
+
+  .textLayer mark.current {
+    background: var(--color-search-current);
+  }
+
+  /* View rotation: pdf.js lays these layers out unrotated and tags them with data-main-rotation. */
+  :is(.textLayer, .annotationLayer)[data-main-rotation="90"] {
+    transform: rotate(90deg) translateY(-100%);
+  }
+
+  :is(.textLayer, .annotationLayer)[data-main-rotation="180"] {
+    transform: rotate(180deg) translate(-100%, -100%);
+  }
+
+  :is(.textLayer, .annotationLayer)[data-main-rotation="270"] {
+    transform: rotate(270deg) translateX(-100%);
+  }
+}
+
+/*
+ * pdf.js annotation layer: real inputs over the page's form fields. Like the text
+ * layer, a minimal subset of pdfjs-dist/web/pdf_viewer.css (`.annotationLayer`),
+ * minus its rounded focus borders. Re-check it when upgrading pdf.js.
+ * Each field is a <section> placed by pdf.js; the layer itself lets clicks through
+ * to the text layer, only the fields catch them.
+ */
+@layer components {
+  .annotationLayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    transform-origin: 0 0;
+    color-scheme: only light;
+    --scale-round-x: 1px;
+    --scale-round-y: 1px;
+    --field-background: color-mix(in srgb, var(--color-accent), transparent 87%);
+  }
+
+  .annotationLayer section {
+    position: absolute;
+    text-align: initial;
+    pointer-events: auto;
+    box-sizing: border-box;
+    transform-origin: 0 0;
+    user-select: none;
+  }
+
+  /* Comment popups and other annotation kinds aren't supported yet. */
+  .annotationLayer :is(.popupAnnotation, .popup) {
+    display: none;
+  }
+
+  .annotationLayer .annotationContent {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .annotationLayer .hasOwnCanvas:not(.sandboxModified) :is(input, textarea) {
+    display: none;
+  }
+
+  .annotationLayer :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton) > a {
+    position: absolute;
+    inset: 0;
+  }
+
+  .annotationLayer .textWidgetAnnotation :is(input, textarea),
+  .annotationLayer .choiceWidgetAnnotation select,
+  .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input {
+    background: var(--field-background);
+    border: 2px solid transparent;
+    box-sizing: border-box;
+    font: calc(9px * var(--total-scale-factor)) sans-serif;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    vertical-align: top;
+    color: black;
+  }
+
+  .annotationLayer .textWidgetAnnotation textarea {
+    resize: none;
+  }
+
+  .annotationLayer .choiceWidgetAnnotation select option {
+    padding: 0;
+  }
+
+  .annotationLayer :is(input, textarea, select)[disabled] {
+    background: none;
+    cursor: not-allowed;
+  }
+
+  .annotationLayer :is(input, textarea, select):hover {
+    border-color: var(--color-ink);
+  }
+
+  .annotationLayer :is(input, textarea, select):focus {
+    background: none;
+    border-color: var(--color-accent);
+    outline: none;
+  }
+
+  .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) input {
+    appearance: none;
+  }
+
+  /* Checkbox / radio looks drawn by pdf.js into small canvases: show the one matching the input. */
+  .annotationLayer .buttonWidgetAnnotation:is(.checkBox, .radioButton) {
+    [data-canvas-name="checked"]:has(~ input:not(:checked)),
+    [data-canvas-name="unchecked"]:has(~ input:checked) {
+      display: none;
+    }
+  }
+
+  .annotationLayer .textWidgetAnnotation input.comb {
+    --comb-width: 0px;
+    --comb-letter-spacing: calc(var(--comb-width) - 1ch);
+    font-family: monospace;
+    letter-spacing: var(--comb-letter-spacing);
+    overflow-x: hidden;
+    padding: 0;
+    text-indent: calc(var(--comb-offset, 0) * var(--comb-width) + var(--comb-letter-spacing) / 2);
   }
 }

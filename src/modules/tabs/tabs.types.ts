@@ -57,6 +57,8 @@ export interface TabsControl {
   activeTab: Tab;
   activate: (tabId: string) => void;
   openDocument: (document: OpenedDocument) => void;
+  /** Replaces a document tab's document (keeps the tab, its id and position). */
+  updateDocument: (tabId: string, document: OpenedDocument) => void;
   close: (tabId: string) => void;
   closeActive: () => void;
   cycle: (direction: TabDirection) => void;

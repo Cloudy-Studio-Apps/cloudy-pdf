@@ -1,9 +1,11 @@
 //! Tauri backend: creates the native window that hosts the React frontend
 //! and registers the plugins/commands the frontend is allowed to use.
 
+mod document_save;
 mod document_source;
 mod open_with;
 mod opened_files;
+mod print;
 mod scope;
 #[cfg(desktop)]
 mod window;
@@ -28,6 +30,10 @@ pub fn run() {
         opened_files::enqueue(app, files);
         window::focus_main_window(app);
     }));
+
+    // Android printing (PrintManager); the Linux side needs no plugin (XDG portal).
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(tauri_plugin_android_print::init());
 
     builder
         // Native "Open file" dialog.
@@ -59,7 +65,9 @@ pub fn run() {
             document_source::document_info,
             document_source::open_document,
             document_source::read_document_range,
-            document_source::close_document
+            document_source::close_document,
+            document_save::save_document,
+            print::print_document
         ])
         .setup(|_app| {
             // Desktop: a PDF opened from the file manager arrives as a launch argument

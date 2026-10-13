@@ -1,0 +1,15 @@
+[package]
+name = "tauri-plugin-android-print"
+version = "0.1.0"
+description = "Prints a PDF file descriptor with Android's PrintManager"
+edition = "2024"
+publish = false
+# Required for Tauri to find this plugin's Android project when building the app.
+links = "tauri-plugin-android-print"
+
+[dependencies]
+tauri = { version = "2" }
+serde = { version = "1", features = ["derive"] }
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }

@@ -3,9 +3,9 @@
  * hold React state, so this code can be reused or tested without React.
  */
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { getFileName } from "@/shared/utils/path.utils";
-import { DOCUMENT_INFO_COMMAND } from "../document.constants";
+import { DOCUMENT_INFO_COMMAND, SAVE_DOCUMENT_COMMAND, SAVE_PATH_HEADER } from "../document.constants";
 import type { DocumentInfo, OpenedDocument } from "../document.types";
 
 const PDF_FILTER = { name: "PDF Documents", extensions: ["pdf"] };
@@ -30,4 +30,24 @@ export async function pickPdfPath(): Promise<string | null> {
 export async function readDocument(path: string): Promise<OpenedDocument> {
   const { size } = await invoke<DocumentInfo>(DOCUMENT_INFO_COMMAND, { path });
   return { id: crypto.randomUUID(), name: getFileName(path), path, size };
+}
+
+/**
+ * Native "Save as" dialog, suggesting `name`. Returns null if the user cancels.
+ * Like `open`, the dialog plugin adds the chosen file to the fs scope, which is
+ * what allows Rust to write it.
+ */
+export function pickSavePath(name: string): Promise<string | null> {
+  return save({ defaultPath: name, filters: [PDF_FILTER] });
+}
+
+/**
+ * Writes `bytes` to `path` (Rust: `document_save.rs`) and returns the file's new size.
+ * The bytes go as the raw request body; the path in a header, percent-encoded
+ * because headers only carry ASCII.
+ */
+export function writeDocument(path: string, bytes: Uint8Array): Promise<number> {
+  return invoke<number>(SAVE_DOCUMENT_COMMAND, bytes, {
+    headers: { [SAVE_PATH_HEADER]: encodeURIComponent(path) },
+  });
 }

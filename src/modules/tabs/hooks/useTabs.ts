@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import { INITIAL_TABS_STATE } from "../tabs.constants";
-import { activateTab, closeTab, cycleTab, openDocumentTab, restoreTabs } from "../tabs.utils";
+import { activateTab, closeTab, cycleTab, openDocumentTab, restoreTabs, updateDocumentTab } from "../tabs.utils";
 import type { TabDirection, TabsControl } from "../tabs.types";
 
 /**
@@ -20,6 +20,10 @@ export function useTabs(): TabsControl {
     (document: OpenedDocument) => setState((s) => openDocumentTab(s, document)),
     [],
   );
+  const updateDocument = useCallback(
+    (tabId: string, document: OpenedDocument) => setState((s) => updateDocumentTab(s, tabId, document)),
+    [],
+  );
   const restore = useCallback(
     (documents: OpenedDocument[], active: string) => setState((s) => restoreTabs(s, documents, active)),
     [],
@@ -31,5 +35,5 @@ export function useTabs(): TabsControl {
     [state],
   );
 
-  return { tabs: state.tabs, activeTab, activate, openDocument, close, closeActive, cycle, restore };
+  return { tabs: state.tabs, activeTab, activate, openDocument, updateDocument, close, closeActive, cycle, restore };
 }

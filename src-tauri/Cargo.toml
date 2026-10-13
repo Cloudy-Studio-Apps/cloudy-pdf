@@ -26,6 +26,8 @@ tauri-plugin-fs = "2"
 tauri-plugin-store = "2"
 tauri-plugin-persisted-scope = "2"
 tauri-plugin-opener = "2"
+# Decodes the save destination, sent percent-encoded in an IPC header.
+percent-encoding = "2"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
@@ -42,4 +44,7 @@ tauri-plugin-single-instance = "2"
 [target.'cfg(target_os = "linux")'.dependencies]
 # async-io backend (not tokio): with tokio, zbus switches its blocking API to a private
 # tokio runtime, which panics when tauri-plugin-opener calls it from an async command.
-ashpd = { version = "0.13.13", default-features = false, features = ["async-io", "open_uri"] }
+ashpd = { version = "0.13.13", default-features = false, features = ["async-io", "open_uri", "print"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+tauri-plugin-android-print = { path = "plugins/android-print" }

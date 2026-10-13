@@ -72,12 +72,22 @@ pub fn from_args<R: Runtime>(
 
 /// Mobile: files arrive as `content://` URLs through the run loop.
 /// Android URLs need no scope grant: the fs plugin reads them through Android's
-/// ContentResolver, using the permission granted with the "open" intent.
+/// ContentResolver, using the (temporary) permission granted with the "open" intent.
 pub fn handle_run_event<R: Runtime>(app: &AppHandle<R>, event: &RunEvent) {
     // `RunEvent::Opened` only exists on these platforms, so this must be compiled conditionally.
     #[cfg(any(target_os = "android", target_os = "ios", target_os = "macos"))]
     if let RunEvent::Opened { urls } = event {
-        enqueue(app, urls.iter().map(ToString::to_string).collect());
+        let app = app.clone();
+        let urls: Vec<String> = urls.iter().map(ToString::to_string).collect();
+        // Open each file right now, while Android's temporary grant is valid (see
+        // `document_source::open_file`), and only then tell the frontend. Off the
+        // event loop, because opening a `content://` URI is a blocking call into Kotlin.
+        tauri::async_runtime::spawn_blocking(move || {
+            for url in &urls {
+                crate::document_source::retain_grant(&app, url);
+            }
+            enqueue(&app, urls);
+        });
     }
 
     // On Linux/Windows nothing to do here; this line just silences "unused variable" warnings.

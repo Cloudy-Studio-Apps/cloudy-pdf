@@ -1,4 +1,5 @@
 /** Tuning values and Rust command names for the pdf module. */
+import type { PdfLinkService } from "./pdf.types";
 
 /**
  * Bytes per range request. pdf.js merges adjacent missing chunks into one
@@ -19,3 +20,18 @@ export const MAX_CANVAS_PIXELS = 2 ** 24;
 export const OPEN_DOCUMENT_COMMAND = "open_document";
 export const READ_DOCUMENT_RANGE_COMMAND = "read_document_range";
 export const CLOSE_DOCUMENT_COMMAND = "close_document";
+
+/**
+ * The annotation layer needs a "link service" to wire up links. Links aren't
+ * supported yet, so they're inert: no href, and clicking does nothing.
+ */
+export const NO_LINKS: PdfLinkService = {
+  eventBus: null,
+  addLinkAttributes: () => undefined,
+  getDestinationHash: () => "#",
+  getAnchorUrl: () => "#",
+  goToDestination: async () => undefined,
+  executeNamedAction: () => undefined,
+  executeSetOCGState: async () => undefined,
+  getAttachmentContent: async () => null,
+};

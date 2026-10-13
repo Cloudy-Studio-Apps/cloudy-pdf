@@ -15,6 +15,10 @@ export function useAppMenus({
   closeActiveTab,
   showAbout,
   canCloseTab,
+  save,
+  saveAs,
+  canSave,
+  canSaveAs,
 }: AppActions): MenuDefinition[] {
   return useMemo(
     () => [
@@ -23,6 +27,14 @@ export function useAppMenus({
         label: "File",
         items: [
           { id: "open", label: "Open…", shortcut: APP_SHORTCUTS.open, onSelect: openDocument },
+          { id: "save", label: "Save", shortcut: APP_SHORTCUTS.save, disabled: !canSave, onSelect: save },
+          {
+            id: "save-as",
+            label: "Save As…",
+            shortcut: APP_SHORTCUTS.saveAs,
+            disabled: !canSaveAs,
+            onSelect: saveAs,
+          },
           {
             id: "close-tab",
             label: "Close Tab",
@@ -38,6 +50,6 @@ export function useAppMenus({
         items: [{ id: "about", label: "About", onSelect: showAbout }],
       },
     ],
-    [openDocument, closeActiveTab, showAbout, canCloseTab],
+    [openDocument, closeActiveTab, showAbout, canCloseTab, save, saveAs, canSave, canSaveAs],
   );
 }

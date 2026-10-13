@@ -24,3 +24,10 @@ export function formatShortcut(shortcut: KeyboardShortcut): string {
   parts.push(shortcut.key.length === 1 ? shortcut.key.toUpperCase() : shortcut.key);
   return parts.join(isMac ? "" : "+");
 }
+
+/** True when the key press goes to a text field, where plain keys (arrows, letters) belong to the field. */
+export function isTypingTarget(event: KeyboardEvent): boolean {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+}
