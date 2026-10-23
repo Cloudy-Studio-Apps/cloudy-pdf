@@ -1,4 +1,4 @@
-package com.darkredgm.pdftormentosa
+package com.darkredgm.cloudypdf
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

@@ -71,7 +71,7 @@ pub fn run() {
         ])
         .setup(|_app| {
             // Desktop: a PDF opened from the file manager arrives as a launch argument
-            // (`pdf-tormentosa /path/file.pdf`). Queue it so the frontend opens it.
+            // (`cloudy-pdf /path/file.pdf`). Queue it so the frontend opens it.
             #[cfg(desktop)]
             {
                 let args: Vec<String> = std::env::args().collect();

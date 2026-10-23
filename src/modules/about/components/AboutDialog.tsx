@@ -15,7 +15,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
         </div>
         <div>
           {/* Fallbacks cover the brief moment before Tauri answers. */}
-          <p className="text-[15px] font-semibold">{info?.name ?? "PDF Tormentosa"}</p>
+          <p className="text-[15px] font-semibold">{info?.name ?? "Cloudy PDF"}</p>
           <p className="text-muted">Version {info?.version ?? "—"}</p>
         </div>
         <p className="text-xs text-subtle">A minimalist PDF reader.</p>

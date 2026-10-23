@@ -1,4 +1,4 @@
-# PDF Tormentosa
+# Cloudy PDF
 
 A minimalist PDF reader built with Tauri 2, React 19, TypeScript, Tailwind CSS 4 and pdf.js.
 
@@ -74,7 +74,7 @@ The app registers itself as a handler for `application/pdf`:
 
 - **Linux:** the `.deb` / `.rpm` packages install a `.desktop` file (template in `src-tauri/linux/`)
   with `MimeType=application/pdf` and `Exec=… %F`. Set it as the default app with
-  `xdg-mime default "PDF Tormentosa.desktop" application/pdf` or from your desktop's settings.
+  `xdg-mime default "Cloudy PDF.desktop" application/pdf` or from your desktop's settings.
   If the app is already running, opening another PDF reuses that window (single-instance plugin).
 - **Android:** `bundle.fileAssociations` adds an `ACTION_VIEW` intent filter for `application/pdf`,
   so the app shows up in "Open with…". Files arrive as `content://` URIs.

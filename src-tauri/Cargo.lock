@@ -495,6 +495,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "cloudy-pdf"
+version = "0.1.0"
+dependencies = [
+ "ashpd",
+ "percent-encoding",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-android-print",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-opener",
+ "tauri-plugin-persisted-scope",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-store",
+]
+
+[[package]]
 name = "combine"
 version = "4.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2440,25 +2459,6 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-link",
-]
-
-[[package]]
-name = "pdf-tormentosa"
-version = "0.1.0"
-dependencies = [
- "ashpd",
- "percent-encoding",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-android-print",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-opener",
- "tauri-plugin-persisted-scope",
- "tauri-plugin-single-instance",
- "tauri-plugin-store",
 ]
 
 [[package]]

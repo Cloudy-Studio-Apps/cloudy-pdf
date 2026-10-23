@@ -3,5 +3,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    pdf_tormentosa_lib::run()
+    cloudy_pdf_lib::run()
 }

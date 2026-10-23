@@ -16,7 +16,7 @@ export function WelcomeSection({ onOpen, isOpening, error, openShortcut }: Welco
       <div className="mx-auto grid max-w-5xl items-center gap-12 px-10 py-20 md:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-8">
           <div className="space-y-4">
-            <p className="text-xs font-semibold tracking-[0.2em] text-accent uppercase">PDF Tormentosa</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-accent uppercase">Cloudy PDF</p>
             <h1 className="text-5xl leading-tight font-semibold tracking-tight">{getGreeting()}.</h1>
             <p className="max-w-md text-base text-muted">
               Your documents, clean and simple. Open a PDF to start reading. Each one opens in its

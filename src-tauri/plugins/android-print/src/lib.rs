@@ -1,4 +1,4 @@
-//! Android printing for PDF Tormentosa: hands a PDF file descriptor to Android's
+//! Android printing for Cloudy PDF: hands a PDF file descriptor to Android's
 //! `PrintManager`, which shows the system print dialog. Called from Rust only
 //! (no frontend commands); see `src-tauri/src/print.rs` in the app.
 

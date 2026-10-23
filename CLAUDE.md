@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-PDF Tormentosa is a minimalist PDF reader: Tauri 2 (Rust) + React 19 + TypeScript + Tailwind CSS 4 + pdf.js (`pdfjs-dist` v6). Targets are Linux and Android, and the UI is white mode only for now.
+Cloudy PDF is a minimalist PDF reader: Tauri 2 (Rust) + React 19 + TypeScript + Tailwind CSS 4 + pdf.js (`pdfjs-dist` v6). Targets are Linux and Android, and the UI is white mode only for now.
 
 ## Commands
 
@@ -78,7 +78,7 @@ Errors switch to the Home tab, which displays them.
 
 **Files opened by the OS** ("Open with…" / default PDF app). This spans Rust and the frontend:
 - `src-tauri/src/opened_files.rs` queues paths in `PendingFiles` and emits `opened-files://pending`. The frontend drains the queue with the `take_pending_files` command (`document/useOpenedFiles`). The queue exists so files arriving before React mounts aren't lost.
-- Desktop: files arrive as argv. They come from the custom `.desktop` template `src-tauri/linux/pdf-tormentosa.desktop` (`Exec=… %F`, `MimeType=application/pdf`) and from the single-instance plugin when a second launch forwards its files. Each path is added to the fs scope in Rust.
+- Desktop: files arrive as argv. They come from the custom `.desktop` template `src-tauri/linux/cloudy-pdf.desktop` (`Exec=… %F`, `MimeType=application/pdf`) and from the single-instance plugin when a second launch forwards its files. Each path is added to the fs scope in Rust.
 - Android: files arrive via `RunEvent::Opened` as `content://` URIs. `bundle.fileAssociations` generates the intent filter. Their read grant is **temporary** and gets revoked when the task changes; reopening then fails with "No content provider". So Rust opens each URI as soon as it arrives (`document_source::retain_grant`) and keeps that descriptor for the process lifetime; later opens get a duplicate (`open_file`).
 - Event and command names are plain strings duplicated in `document.constants.ts` and Rust. Keep them in sync.
 

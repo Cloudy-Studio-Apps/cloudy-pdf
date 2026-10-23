@@ -59,7 +59,7 @@ pub fn from_args<R: Runtime>(
         .skip(1)
         // Ignore flags like `--verbose`.
         .filter(|arg| !arg.starts_with('-'))
-        // Relative paths (`pdf-tormentosa doc.pdf` from a terminal) are resolved against
+        // Relative paths (`cloudy-pdf doc.pdf` from a terminal) are resolved against
         // the directory the command was run from; absolute paths stay unchanged.
         .map(|arg| cwd.join(arg))
         .filter(|path| path.is_file())

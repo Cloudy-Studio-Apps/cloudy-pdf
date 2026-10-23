@@ -1,6 +1,6 @@
 /**
  * Persists the history with the Tauri store plugin: a JSON file in the app's
- * data folder (e.g. ~/.local/share/com.darkredgm.pdftormentosa/history.json).
+ * data folder (e.g. ~/.local/share/com.darkredgm.cloudypdf/history.json).
  * Used instead of localStorage because it's a real file owned by the app,
  * shared between dev and release builds, and not tied to the webview's cache.
  */
