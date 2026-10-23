@@ -1,0 +1,30 @@
+# Local pacman package for Arch-based systems (Arch, CachyOS, …).
+# Packages the binary built by `tauri build --no-bundle`; run `pnpm release:arch`
+# from the repo root, then `sudo pacman -U packaging/arch/cloudy-pdf-*.pkg.tar.zst`.
+
+_root="$startdir/../.."
+_tauri="$_root/src-tauri"
+
+pkgname=cloudy-pdf
+pkgver=$(sed -n 's/^  "version": "\(.*\)",$/\1/p' "$_tauri/tauri.conf.json")
+pkgrel=1
+pkgdesc="Cloudy PDF — a minimalist PDF reader"
+arch=('x86_64')
+url="https://github.com/Cloudy-Studio-Apps/cloudy-pdf"
+license=('AGPL-3.0-only')
+depends=('webkit2gtk-4.1' 'gtk3' 'libsoup3' 'hicolor-icon-theme')
+# "Open with…", "Show in file manager" and printing go through the desktop portal.
+optdepends=('xdg-desktop-portal: Open with… and the print dialog')
+options=('!strip' '!debug')
+
+package() {
+  install -Dm755 "$_tauri/target/release/cloudy-pdf" "$pkgdir/usr/bin/cloudy-pdf"
+
+  install -Dm644 "$startdir/cloudy-pdf.desktop" "$pkgdir/usr/share/applications/cloudy-pdf.desktop"
+
+  local icons="$_tauri/icons" share="$pkgdir/usr/share/icons/hicolor"
+  install -Dm644 "$icons/32x32.png" "$share/32x32/apps/cloudy-pdf.png"
+  install -Dm644 "$icons/128x128.png" "$share/128x128/apps/cloudy-pdf.png"
+  install -Dm644 "$icons/128x128@2x.png" "$share/256x256/apps/cloudy-pdf.png"
+  install -Dm644 "$icons/icon.png" "$share/512x512/apps/cloudy-pdf.png"
+}

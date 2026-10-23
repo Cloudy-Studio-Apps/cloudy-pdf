@@ -9,6 +9,26 @@ pnpm install
 pnpm tauri dev
 ```
 
+## Release builds
+
+| Command | Builds | Output |
+| --- | --- | --- |
+| `pnpm release:linux` | The `.deb`, `.rpm` and AppImage | `src-tauri/target/release/bundle/` |
+| `pnpm release:arch` | A pacman package with the desktop entry | `packaging/arch/` |
+| `pnpm release` | Both | |
+
+Install the Arch package with `sudo pacman -U packaging/arch/cloudy-pdf-*.pkg.tar.zst`.
+
+### Publishing a release
+
+Releases are built by GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)) when a version tag is pushed:
+
+```sh
+pnpm release:tag 0.2.0   # writes the version, commits "Release v0.2.0", tags v0.2.0 and pushes
+```
+
+The workflow builds the `.deb`, the `.rpm`, the AppImage and the Arch package into a **draft** release. Review the notes and press **Publish**.
+
 ## Architecture
 
 ```
@@ -81,3 +101,15 @@ The app registers itself as a handler for `application/pdf`:
 
 Flow: the OS hands over a file → `src-tauri/src/opened_files.rs` queues it and emits
 `opened-files://pending` → the frontend drains the queue (`useOpenedFiles`) and opens the latest file.
+
+## License
+
+Copyright © 2026 DarkRedgm.
+
+Cloudy PDF is free software, licensed under the [GNU Affero General Public License v3.0](LICENSE). You may use, study, change and share it. If you distribute a modified version, or run one as a service others use over a network, you must publish its source under the same license.
+
+### Third-party content
+
+- PDF rendering by [pdf.js](https://mozilla.github.io/pdf.js/), © Mozilla and contributors, licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+- Icons from [Lucide](https://lucide.dev) (ISC), via `react-icons`.
+- Other dependencies keep their own licenses, listed in `package.json` and `src-tauri/Cargo.toml`.

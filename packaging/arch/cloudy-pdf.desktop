@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Cloudy PDF
+Comment=A minimalist PDF reader
+Exec=cloudy-pdf %F
+Icon=cloudy-pdf
+StartupWMClass=cloudy-pdf
+Categories=Office;Viewer;
+MimeType=application/pdf;
+Terminal=false

@@ -2,8 +2,10 @@
 name = "cloudy-pdf"
 version = "0.1.0"
 description = "A minimalist PDF reader"
-authors = ["you"]
+authors = ["DarkRedgm"]
 edition = "2024"
+license = "AGPL-3.0-only"
+repository = "https://github.com/Cloudy-Studio-Apps/cloudy-pdf"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

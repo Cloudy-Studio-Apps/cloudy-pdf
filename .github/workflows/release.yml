@@ -1,0 +1,121 @@
+# Builds a release when a version tag is pushed (`pnpm release:tag 0.2.0` pushes `v0.2.0`).
+#
+# Everything lands in a DRAFT release: the Ubuntu .deb, the .rpm, the AppImage and the Arch
+# package. Review it and publish it on GitHub.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    name: Create the draft release
+    runs-on: ubuntu-latest
+    outputs:
+      release-id: ${{ steps.draft.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the app's version
+        run: |
+          version=$(jq -r .version src-tauri/tauri.conf.json)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match tauri.conf.json's version $version"
+            exit 1
+          fi
+
+      - name: Create the draft
+        id: draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Created through the API, which answers with the id: listing releases right after
+        # creating one may not show the new draft yet, and the builds would then upload nothing.
+        run: |
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases" \
+            -f tag_name="$GITHUB_REF_NAME" -f name="Cloudy PDF $GITHUB_REF_NAME" \
+            -F draft=true -F generate_release_notes=true --jq .id)
+          if [ -z "$id" ]; then
+            echo "::error::Couldn't create the draft release"
+            exit 1
+          fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (Linux)
+    needs: create-release
+    # The oldest supported Ubuntu, so the AppImage runs on more distros.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            libxdo-dev libssl-dev build-essential patchelf rpm
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NO_STRIP: "true"
+        with:
+          releaseId: ${{ needs.create-release.outputs.release-id }}
+          args: --bundles deb,rpm,appimage
+
+  arch:
+    name: Build (Arch Linux)
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install build tools
+        run: |
+          pacman -Syu --noconfirm --needed base-devel git github-cli nodejs pnpm rustup \
+            webkit2gtk-4.1 gtk3 libsoup3 librsvg openssl
+
+      - uses: actions/checkout@v4
+
+      # makepkg refuses to run as root.
+      - name: Build the package
+        run: |
+          useradd -m builder
+          chown -R builder "$GITHUB_WORKSPACE"
+          runuser -u builder -- env HOME=/home/builder bash -euc '
+            cd "$GITHUB_WORKSPACE"
+            rustup default stable
+            pnpm install --frozen-lockfile
+            pnpm release:arch
+          '
+
+      - name: Upload it to the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          gh release upload "$GITHUB_REF_NAME" packaging/arch/*.pkg.tar.zst --clobber \
+            --repo "$GITHUB_REPOSITORY"

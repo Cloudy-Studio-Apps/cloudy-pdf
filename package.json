@@ -1,13 +1,18 @@
 {
   "name": "cloudy-pdf",
   "private": true,
+  "license": "AGPL-3.0-only",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "release": "pnpm release:linux && pnpm release:arch",
+    "release:linux": "NO_STRIP=true tauri build --bundles deb,rpm,appimage",
+    "release:arch": "tauri build --no-bundle && cd packaging/arch && makepkg -f",
+    "release:tag": "node scripts/release-tag.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

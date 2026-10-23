@@ -14,7 +14,10 @@ pnpm tauri dev                     # run the desktop app (Vite on :1420 + Rust b
 pnpm build                         # tsc type-check + Vite build (frontend only)
 pnpm exec tsc --noEmit             # type-check only
 cd src-tauri && cargo check        # compile-check the Rust backend
-pnpm tauri build --bundles deb     # release package (also: rpm, appimage)
+pnpm release:linux                 # .deb, .rpm and AppImage (src-tauri/target/release/bundle/)
+pnpm release:arch                  # pacman package (packaging/arch/PKGBUILD, needs makepkg)
+pnpm release                       # both
+pnpm release:tag 0.2.0             # bump the version, commit, tag v0.2.0 and push: CI builds a draft release
 pnpm tauri android init|dev        # Android (needs SDK/NDK + rust android targets)
 ```
 
@@ -94,6 +97,8 @@ Errors switch to the Home tab, which displays them.
 - "Show in file manager" uses `tauri-plugin-opener` `revealItemInDir` (FileManager1 over D-Bus on Linux).
 - "Open with…" is the Rust command `open_with`, which uses the XDG Desktop Portal app chooser via `ashpd`. This is Linux-only, and `isDesktop` hides these entries on mobile.
 - **Keep `ashpd` on the `async-io` feature (`default-features = false`).** Its `tokio` feature switches zbus into Tokio mode. The opener plugin's blocking D-Bus call then tries to start a second Tokio runtime inside Tauri's, which panics.
+
+**Releases.** `pnpm release:tag <version>` (`scripts/release-tag.mjs`) writes the version into `package.json`, `tauri.conf.json`, `Cargo.toml` and `Cargo.lock`, commits, tags `v<version>` and pushes. `.github/workflows/release.yml` then builds the .deb, .rpm and AppImage (Ubuntu 22.04, `tauri-action`) and the Arch package (an `archlinux` container running `pnpm release:arch`) into a draft release, published by hand. The Arch package has its own concrete `.desktop` in `packaging/arch/`, separate from the Handlebars template used by .deb/.rpm. There's no in-app updater yet. Licensed AGPL-3.0-only (`LICENSE`), like the rest of the Cloudy series.
 
 **Menus.** `menu` is generic and data-driven. `MenuList` is shared by the menu bar dropdowns and the portal-rendered `ContextMenu`, which keeps itself inside the viewport.
 
