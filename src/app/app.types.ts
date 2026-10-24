@@ -7,6 +7,7 @@ import type { OpenedDocument } from "@/modules/document/document.types";
 import type { AnnotationsControl, AnnotationsLayerValue } from "@/modules/annotations/annotations.types";
 import type { PageSize, PdfDocument, PdfInkStroke } from "@/modules/pdf/pdf.types";
 import type { ViewerTool } from "@/modules/viewer/viewer.types";
+import type { ToolHostActions, ToolsPageProps } from "@/modules/tools/tools.types";
 
 /** Actions the shell exposes to menus and shortcuts. */
 export interface AppActions {
@@ -88,7 +89,12 @@ export interface TabContentProps {
   /** Everything the Home page needs; built once in App. */
   home: HomePageProps;
   documentHost: DocumentHost;
+  /** What the Tools tab and the tool tabs need; built once in App. */
+  tools: ToolsHost;
 }
+
+/** The Tools catalog opens tools; tools send their results to document tabs or the file manager. */
+export type ToolsHost = ToolsPageProps & ToolHostActions;
 
 /** App-wide shortcuts, defined once and reused by the menu labels and the key handlers. */
 export interface AppShortcuts {

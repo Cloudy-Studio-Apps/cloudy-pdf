@@ -7,6 +7,7 @@ mod open_with;
 mod opened_files;
 mod print;
 mod scope;
+mod tools;
 #[cfg(desktop)]
 mod window;
 
@@ -67,7 +68,10 @@ pub fn run() {
             document_source::read_document_range,
             document_source::close_document,
             document_save::save_document,
-            print::print_document
+            print::print_document,
+            tools::info::tool_page_count,
+            tools::merge::tool_merge,
+            tools::split::tool_split
         ])
         .setup(|_app| {
             // Desktop: a PDF opened from the file manager arrives as a launch argument

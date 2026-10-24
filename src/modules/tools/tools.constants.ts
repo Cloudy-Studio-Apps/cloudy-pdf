@@ -1,8 +1,10 @@
 /**
  * The tool catalog, mirroring the tools and categories of iLovePDF.
  * Pure data: the page just renders it, so adding or moving a tool happens here only.
- * Each tool points at its scene: the seal mascot doing that tool's job.
+ * Each tool points at its scene: the seal mascot doing that tool's job, and, once
+ * implemented, at its `body`: the screen shown in the tool's own tab.
  */
+import { lazy } from "react";
 import {
   CompressScene,
   OcrScene,
@@ -45,7 +47,14 @@ import {
   UnlockScene,
 } from "./components/scenes/SecurityScenes";
 import { SummarizeScene, TranslateScene } from "./components/scenes/IntelligenceScenes";
-import type { ToolCategory } from "./tools.types";
+import type { SplitMode, ToolCategory } from "./tools.types";
+
+// Tool screens are loaded on first use, so the catalog adds nothing to the startup bundle.
+const MergeTool = lazy(() => import("./components/tools/MergeTool").then((m) => ({ default: m.MergeTool })));
+const SplitTool = lazy(() => import("./components/tools/SplitTool").then((m) => ({ default: m.SplitTool })));
+const ExtractPagesTool = lazy(() =>
+  import("./components/tools/SplitTool").then((m) => ({ default: m.ExtractPagesTool })),
+);
 
 export const TOOL_CATEGORIES: ToolCategory[] = [
   {
@@ -53,10 +62,10 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     title: "Organize PDF",
     color: "#e5322d",
     tools: [
-      { id: "merge", name: "Merge PDF", description: "Combine several PDFs into one, in the order you want.", scene: MergeScene },
-      { id: "split", name: "Split PDF", description: "Separate one page or a whole set into independent PDF files.", scene: SplitScene },
+      { id: "merge", name: "Merge PDF", description: "Combine several PDFs into one, in the order you want.", scene: MergeScene, body: MergeTool },
+      { id: "split", name: "Split PDF", description: "Separate one page or a whole set into independent PDF files.", scene: SplitScene, body: SplitTool },
       { id: "remove-pages", name: "Remove pages", description: "Delete the pages you don't need from a PDF.", scene: RemovePagesScene },
-      { id: "extract-pages", name: "Extract pages", description: "Pull selected pages out into a new PDF.", scene: ExtractPagesScene },
+      { id: "extract-pages", name: "Extract pages", description: "Pull selected pages out into a new PDF.", scene: ExtractPagesScene, body: ExtractPagesTool },
       { id: "organize", name: "Organize PDF", description: "Sort, add or delete pages however you like.", scene: OrganizeScene },
       { id: "scan", name: "Scan to PDF", description: "Capture paper documents with your camera and save them as PDF.", scene: ScanScene },
     ],
@@ -131,3 +140,21 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     ],
   },
 ];
+
+/** Labels of the Split output modes. */
+export const SPLIT_MODE_LABELS: Record<SplitMode, { title: string; hint: string }> = {
+  extract: { title: "Extract", hint: "The selected pages, in one PDF" },
+  "per-range": { title: "Split by range", hint: "One PDF per range, in a folder" },
+  "each-page": { title: "Every page", hint: "One PDF per page, in a folder" },
+};
+
+// Names shared with the Rust backend (`src-tauri/src/tools/`); keep them in sync.
+
+/** Must match `tool_page_count` in `tools/info.rs`. */
+export const TOOL_PAGE_COUNT_COMMAND = "tool_page_count";
+
+/** Must match `tool_merge` in `tools/merge.rs`. */
+export const TOOL_MERGE_COMMAND = "tool_merge";
+
+/** Must match `tool_split` in `tools/split.rs`. */
+export const TOOL_SPLIT_COMMAND = "tool_split";

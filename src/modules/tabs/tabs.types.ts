@@ -5,7 +5,7 @@
 import type { ReactNode } from "react";
 import type { OpenedDocument } from "@/modules/document/document.types";
 
-export type TabKind = "home" | "tools" | "document";
+export type TabKind = "home" | "tools" | "document" | "tool";
 
 interface BaseTab {
   id: string;
@@ -27,11 +27,20 @@ export interface DocumentTab extends BaseTab {
   document: OpenedDocument;
 }
 
+/** One tab per opened tool (Merge, Split…); closable. Opening the same tool again focuses it. */
+export interface ToolTab extends BaseTab {
+  kind: "tool";
+  toolId: string;
+}
+
 /**
  * Discriminated union: checking `tab.kind` tells TypeScript which fields exist
  * (only a DocumentTab has `document`).
  */
-export type Tab = HomeTab | ToolsTab | DocumentTab;
+export type Tab = HomeTab | ToolsTab | DocumentTab | ToolTab;
+
+/** Tabs the user can close: documents and tools. */
+export type ClosableTab = DocumentTab | ToolTab;
 
 export interface TabsState {
   tabs: Tab[];
@@ -47,7 +56,9 @@ export type TabDirection = 1 | -1;
 export interface TabsSession {
   /** Paths of the open document tabs, in tab order. */
   documents: string[];
-  /** The active tab: a fixed tab's id ("home", "tools") or a document's path. */
+  /** Ids of the open tools (their inputs aren't kept). */
+  tools: string[];
+  /** The active tab: a fixed tab's id ("home", "tools"), a document's path or a tool tab's id. */
   active: string;
 }
 
@@ -57,13 +68,15 @@ export interface TabsControl {
   activeTab: Tab;
   activate: (tabId: string) => void;
   openDocument: (document: OpenedDocument) => void;
+  /** Opens a tool in its own tab (or focuses it), titled `title`. */
+  openTool: (toolId: string, title: string) => void;
   /** Replaces a document tab's document (keeps the tab, its id and position). */
   updateDocument: (tabId: string, document: OpenedDocument) => void;
   close: (tabId: string) => void;
   closeActive: () => void;
   cycle: (direction: TabDirection) => void;
-  /** Reopens a saved session's documents (already re-read) in one update. */
-  restore: (documents: OpenedDocument[], active: string) => void;
+  /** Reopens a saved session's documents (already re-read) and tools in one update. */
+  restore: (documents: OpenedDocument[], tools: ToolTab[], active: string) => void;
 }
 
 export interface TabBarProps {

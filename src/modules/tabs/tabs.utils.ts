@@ -5,11 +5,24 @@
  */
 import type { OpenedDocument } from "@/modules/document/document.types";
 import { INITIAL_TABS_STATE } from "./tabs.constants";
-import type { DocumentTab, Tab, TabDirection, TabsSession, TabsState } from "./tabs.types";
+import type { ClosableTab, DocumentTab, Tab, TabDirection, TabsSession, TabsState, ToolTab } from "./tabs.types";
 
-/** Only document tabs can be closed; Home and Tools are permanent. */
-export function isClosable(tab: Tab): tab is DocumentTab {
+/** Documents and tools can be closed; Home and Tools are permanent. */
+export function isClosable(tab: Tab): tab is ClosableTab {
+  return tab.kind === "document" || tab.kind === "tool";
+}
+
+export function isDocumentTab(tab: Tab): tab is DocumentTab {
   return tab.kind === "document";
+}
+
+export function isToolTab(tab: Tab): tab is ToolTab {
+  return tab.kind === "tool";
+}
+
+/** One tab per tool, so the tool id is the tab id (stable across reloads). */
+export function createToolTab(toolId: string, title: string): ToolTab {
+  return { id: `tool:${toolId}`, kind: "tool", title, toolId };
 }
 
 export function createDocumentTab(document: OpenedDocument): DocumentTab {
@@ -21,11 +34,17 @@ export function createDocumentTab(document: OpenedDocument): DocumentTab {
  * If the same file is already open, that tab is focused instead of opening a duplicate.
  */
 export function openDocumentTab(state: TabsState, document: OpenedDocument): TabsState {
-  const existing = state.tabs.find((tab) => isClosable(tab) && tab.document.path === document.path);
+  const existing = state.tabs.find((tab) => isDocumentTab(tab) && tab.document.path === document.path);
   if (existing) return { ...state, activeId: existing.id };
 
   const tab = createDocumentTab(document);
   return { tabs: [...state.tabs, tab], activeId: tab.id };
+}
+
+/** Opens a tool in a new tab and focuses it; a tool already open is focused instead. */
+export function openToolTab(state: TabsState, tool: ToolTab): TabsState {
+  if (state.tabs.some((tab) => tab.id === tool.id)) return { ...state, activeId: tool.id };
+  return { tabs: [...state.tabs, tool], activeId: tool.id };
 }
 
 /**
@@ -66,7 +85,7 @@ export function activateTab(state: TabsState, tabId: string): TabsState {
  */
 export function updateDocumentTab(state: TabsState, tabId: string, document: OpenedDocument): TabsState {
   const tabs = state.tabs.map((tab) =>
-    tab.id === tabId && isClosable(tab) ? { ...tab, title: document.name, document } : tab,
+    tab.id === tabId && isDocumentTab(tab) ? { ...tab, title: document.name, document } : tab,
   );
   return { ...state, tabs };
 }
@@ -74,22 +93,36 @@ export function updateDocumentTab(state: TabsState, tabId: string, document: Ope
 /** The part of the tab state worth keeping across a reload. */
 export function toTabsSession(tabs: Tab[], activeTab: Tab): TabsSession {
   return {
-    documents: tabs.filter(isClosable).map((tab) => tab.document.path),
-    active: isClosable(activeTab) ? activeTab.document.path : activeTab.id,
+    documents: tabs.filter(isDocumentTab).map((tab) => tab.document.path),
+    tools: tabs.filter(isToolTab).map((tab) => tab.toolId),
+    active: sessionId(activeTab),
   };
 }
 
 /**
- * Reopens a saved session's documents and focuses its active tab.
+ * How a tab is named in a session: a document by its path (its tab id is new
+ * each time the file is read), any other tab by its id.
+ */
+function sessionId(tab: Tab): string {
+  return isDocumentTab(tab) ? tab.document.path : tab.id;
+}
+
+/**
+ * Reopens a saved session's documents and tools, and focuses its active tab.
  *
  * Documents are re-read asynchronously, so something else may have happened in
  * the meantime (e.g. the OS handed over a file). If focus already moved away from
  * the initial tab, it stays there: the newest action wins over the old session.
  */
-export function restoreTabs(state: TabsState, documents: OpenedDocument[], active: string): TabsState {
-  const restored = documents.reduce(openDocumentTab, state);
+export function restoreTabs(
+  state: TabsState,
+  documents: OpenedDocument[],
+  tools: ToolTab[],
+  active: string,
+): TabsState {
+  const restored = tools.reduce(openToolTab, documents.reduce(openDocumentTab, state));
   if (state.activeId !== INITIAL_TABS_STATE.activeId) return { ...restored, activeId: state.activeId };
 
-  const target = restored.tabs.find((tab) => (isClosable(tab) ? tab.document.path : tab.id) === active);
+  const target = restored.tabs.find((tab) => sessionId(tab) === active);
   return { ...restored, activeId: target?.id ?? state.activeId };
 }

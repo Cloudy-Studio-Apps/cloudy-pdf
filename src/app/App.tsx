@@ -7,7 +7,7 @@
  * the pages shown inside tabs (`home`, `tools`, `viewer`), the menu bar (`menu`)
  * and About (`about`).
  */
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AboutDialog } from "@/modules/about/components/AboutDialog";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import { useOpenDocument } from "@/modules/document/hooks/useOpenDocument";
@@ -27,7 +27,7 @@ import { useAppShortcuts } from "./hooks/useAppShortcuts";
 import { useDocumentCommands } from "./hooks/useDocumentCommands";
 import { useHomePage } from "./hooks/useHomePage";
 import { useTabsSession } from "./hooks/useTabsSession";
-import type { AppActions } from "./app.types";
+import type { AppActions, ToolsHost } from "./app.types";
 
 export function App() {
   const tabs = useTabs();
@@ -86,6 +86,15 @@ export function App() {
   const menus = useAppMenus(actions);
   useAppShortcuts(actions);
   const home = useHomePage(opener, history, system, openDocument);
+  // A tool's result opens like any file (a tab, and an entry in Recent).
+  const tools = useMemo<ToolsHost>(
+    () => ({
+      onOpenTool: tabs.openTool,
+      onOpenDocument: (path) => void opener.openPath(path),
+      onReveal: system.reveal,
+    }),
+    [tabs.openTool, opener.openPath, system.reveal],
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -103,7 +112,13 @@ export function App() {
           const isActive = tab.id === tabs.activeTab.id;
           return (
             <TabPanel key={tab.id} isActive={isActive}>
-              <TabContent tab={tab} isActive={isActive} home={home} documentHost={documentCommands.host} />
+              <TabContent
+                tab={tab}
+                isActive={isActive}
+                home={home}
+                documentHost={documentCommands.host}
+                tools={tools}
+              />
             </TabPanel>
           );
         })}

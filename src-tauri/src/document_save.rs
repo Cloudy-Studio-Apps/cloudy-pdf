@@ -31,7 +31,7 @@ pub async fn save_document<R: Runtime>(app: AppHandle<R>, request: Request<'_>) 
         InvokeBody::Json(value) => Vec::<u8>::deserialize(value).map_err(|error| error.to_string())?,
     };
     let size = bytes.len() as u64;
-    blocking(move || write(&app, &path, &bytes)).await?;
+    blocking(move || write_file(&app, &path, &bytes)).await?;
     Ok(size)
 }
 
@@ -48,8 +48,8 @@ fn path_header(request: &Request<'_>) -> Result<String, String> {
 }
 
 /// Only files the app was granted (opened, or picked in the "Save as" dialog, which
-/// adds them to the scope) can be written.
-fn write<R: Runtime>(app: &AppHandle<R>, path: &str, bytes: &[u8]) -> Result<(), String> {
+/// adds them to the scope) can be written. Also used by the PDF tools (`tools/`).
+pub(crate) fn write_file<R: Runtime>(app: &AppHandle<R>, path: &str, bytes: &[u8]) -> Result<(), String> {
     match ensure_allowed(app, path)? {
         FilePath::Path(path) => replace_file(&path, bytes),
         FilePath::Url(url) if url.scheme() == "file" => {

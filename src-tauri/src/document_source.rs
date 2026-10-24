@@ -111,6 +111,16 @@ pub(crate) fn open_file<R: Runtime>(app: &AppHandle<R>, path: &str) -> Result<Fi
     Ok(file)
 }
 
+/// Reads a whole file, for the PDF tools (which need the complete document).
+///
+/// Positioned reads, not `read_to_end`: on Android the descriptor is a duplicate
+/// of the retained one, and duplicates share one cursor, so reading through it
+/// would leave the next opener at the end of the file.
+pub(crate) fn read_file<R: Runtime>(app: &AppHandle<R>, path: &str) -> Result<Vec<u8>, String> {
+    let source = OpenSource::open(app, path)?;
+    source.read(0, source.size).map_err(|error| error.to_string())
+}
+
 /// Opens a URI the OS just handed over, while its temporary grant is still valid
 /// (see [`open_file`]). Errors are ignored here: the frontend's own open reports them.
 #[cfg(any(target_os = "android", target_os = "ios", target_os = "macos"))]

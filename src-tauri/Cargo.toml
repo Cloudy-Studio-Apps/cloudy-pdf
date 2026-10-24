@@ -30,6 +30,9 @@ tauri-plugin-persisted-scope = "2"
 tauri-plugin-opener = "2"
 # Decodes the save destination, sent percent-encoded in an IPC header.
 percent-encoding = "2"
+# PDF tools (merge, split…): reads, edits and writes whole documents. No default
+# features: chrono (timestamps) and rayon (parallel parsing) aren't needed.
+lopdf = { version = "0.46", default-features = false }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

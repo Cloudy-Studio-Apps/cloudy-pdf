@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { getErrorMessage } from "@/shared/utils/error.utils";
-import { pickPdfPath, readDocument } from "../services/document.service";
+import { pickPdfPath } from "@/shared/files/file-dialogs.service";
+import { readDocument } from "../services/document.service";
 import type {
   OpenDocumentCallbacks,
   OpenDocumentStatus,

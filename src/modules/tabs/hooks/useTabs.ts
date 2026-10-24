@@ -1,8 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
 import type { OpenedDocument } from "@/modules/document/document.types";
 import { INITIAL_TABS_STATE } from "../tabs.constants";
-import { activateTab, closeTab, cycleTab, openDocumentTab, restoreTabs, updateDocumentTab } from "../tabs.utils";
-import type { TabDirection, TabsControl } from "../tabs.types";
+import {
+  activateTab,
+  closeTab,
+  createToolTab,
+  cycleTab,
+  openDocumentTab,
+  openToolTab,
+  restoreTabs,
+  updateDocumentTab,
+} from "../tabs.utils";
+import type { TabDirection, TabsControl, ToolTab } from "../tabs.types";
 
 /**
  * Tab state for the app. All rules live in tabs.utils; this hook only stores
@@ -20,12 +29,17 @@ export function useTabs(): TabsControl {
     (document: OpenedDocument) => setState((s) => openDocumentTab(s, document)),
     [],
   );
+  const openTool = useCallback(
+    (toolId: string, title: string) => setState((s) => openToolTab(s, createToolTab(toolId, title))),
+    [],
+  );
   const updateDocument = useCallback(
     (tabId: string, document: OpenedDocument) => setState((s) => updateDocumentTab(s, tabId, document)),
     [],
   );
   const restore = useCallback(
-    (documents: OpenedDocument[], active: string) => setState((s) => restoreTabs(s, documents, active)),
+    (documents: OpenedDocument[], tools: ToolTab[], active: string) =>
+      setState((s) => restoreTabs(s, documents, tools, active)),
     [],
   );
 
@@ -35,5 +49,16 @@ export function useTabs(): TabsControl {
     [state],
   );
 
-  return { tabs: state.tabs, activeTab, activate, openDocument, updateDocument, close, closeActive, cycle, restore };
+  return {
+    tabs: state.tabs,
+    activeTab,
+    activate,
+    openDocument,
+    openTool,
+    updateDocument,
+    close,
+    closeActive,
+    cycle,
+    restore,
+  };
 }

@@ -3,24 +3,9 @@
  * hold React state, so this code can be reused or tested without React.
  */
 import { invoke } from "@tauri-apps/api/core";
-import { open, save } from "@tauri-apps/plugin-dialog";
 import { getFileName } from "@/shared/utils/path.utils";
 import { DOCUMENT_INFO_COMMAND, SAVE_DOCUMENT_COMMAND, SAVE_PATH_HEADER } from "../document.constants";
 import type { DocumentInfo, OpenedDocument } from "../document.types";
-
-const PDF_FILTER = { name: "PDF Documents", extensions: ["pdf"] };
-
-/**
- * Shows the native "Open file" dialog, limited to PDFs.
- * Returns null if the user cancels.
- *
- * Security note: Rust only reads files inside the fs plugin's scope.
- * The dialog plugin automatically adds the picked file to that scope, which is
- * why `readDocument` can open it without broader filesystem permissions.
- */
-export async function pickPdfPath(): Promise<string | null> {
-  return open({ multiple: false, directory: false, filters: [PDF_FILTER] });
-}
 
 /**
  * Checks the file can be opened and wraps it as an OpenedDocument.
@@ -30,15 +15,6 @@ export async function pickPdfPath(): Promise<string | null> {
 export async function readDocument(path: string): Promise<OpenedDocument> {
   const { size } = await invoke<DocumentInfo>(DOCUMENT_INFO_COMMAND, { path });
   return { id: crypto.randomUUID(), name: getFileName(path), path, size };
-}
-
-/**
- * Native "Save as" dialog, suggesting `name`. Returns null if the user cancels.
- * Like `open`, the dialog plugin adds the chosen file to the fs scope, which is
- * what allows Rust to write it.
- */
-export function pickSavePath(name: string): Promise<string | null> {
-  return save({ defaultPath: name, filters: [PDF_FILTER] });
 }
 
 /**

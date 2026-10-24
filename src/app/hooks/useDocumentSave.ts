@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { pickSavePath, writeDocument } from "@/modules/document/services/document.service";
+import { writeDocument } from "@/modules/document/services/document.service";
+import { pickSavePath } from "@/shared/files/file-dialogs.service";
 import { useFormModified } from "@/modules/pdf/hooks/useFormModified";
 import { exportPdf, markSaved, setInkAnnotations } from "@/modules/pdf/services/pdf.service";
 import { getErrorMessage } from "@/shared/utils/error.utils";

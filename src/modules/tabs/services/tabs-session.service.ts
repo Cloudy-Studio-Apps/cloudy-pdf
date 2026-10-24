@@ -18,13 +18,17 @@ const isTabsSession = (value: unknown): value is TabsSession =>
   value !== null &&
   Array.isArray((value as TabsSession).documents) &&
   (value as TabsSession).documents.every((path) => typeof path === "string") &&
+  // Missing in sessions saved before tool tabs existed.
+  ((value as TabsSession).tools === undefined ||
+    (Array.isArray((value as TabsSession).tools) &&
+      (value as TabsSession).tools.every((id) => typeof id === "string"))) &&
   typeof (value as TabsSession).active === "string";
 
 export function loadTabsSession(): TabsSession | null {
   try {
     const raw = sessionStorage.getItem(TABS_SESSION_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return isTabsSession(parsed) ? parsed : null;
+    return isTabsSession(parsed) ? { ...parsed, tools: parsed.tools ?? [] } : null;
   } catch {
     return null;
   }

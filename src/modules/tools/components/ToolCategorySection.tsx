@@ -2,7 +2,7 @@ import { ToolCard } from "./ToolCard";
 import type { ToolCategorySectionProps } from "../tools.types";
 
 /** One category heading (with its color key) and the grid of its tools. */
-export function ToolCategorySection({ category }: ToolCategorySectionProps) {
+export function ToolCategorySection({ category, onOpenTool }: ToolCategorySectionProps) {
   const headingId = `tools-${category.id}`;
 
   return (
@@ -17,7 +17,7 @@ export function ToolCategorySection({ category }: ToolCategorySectionProps) {
       {/* auto-fill: as many 220px+ columns as fit, so the grid adapts from phone to desktop. */}
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
         {category.tools.map((tool) => (
-          <ToolCard key={tool.id} tool={tool} color={category.color} />
+          <ToolCard key={tool.id} tool={tool} color={category.color} onOpenTool={onOpenTool} />
         ))}
       </ul>
     </section>
