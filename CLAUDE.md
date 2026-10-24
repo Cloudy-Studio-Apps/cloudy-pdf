@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Cloudy PDF is a minimalist PDF reader: Tauri 2 (Rust) + React 19 + TypeScript + Tailwind CSS 4 + pdf.js (`pdfjs-dist` v6). Targets are Linux and Android, and the UI is white mode only for now.
+Cloudy PDF is a minimalist PDF reader: Tauri 2 (Rust) + React 19 + TypeScript + Tailwind CSS 4 + pdf.js (`pdfjs-dist` v6). Targets are Linux and Android (Windows builds are released too, without Windows-specific features), and the UI is white mode only for now.
 
 ## Commands
 
@@ -98,7 +98,7 @@ Errors switch to the Home tab, which displays them.
 - "Open with…" is the Rust command `open_with`, which uses the XDG Desktop Portal app chooser via `ashpd`. This is Linux-only, and `isDesktop` hides these entries on mobile.
 - **Keep `ashpd` on the `async-io` feature (`default-features = false`).** Its `tokio` feature switches zbus into Tokio mode. The opener plugin's blocking D-Bus call then tries to start a second Tokio runtime inside Tauri's, which panics.
 
-**Releases.** `pnpm release:tag <version>` (`scripts/release-tag.mjs`) writes the version into `package.json`, `tauri.conf.json`, `Cargo.toml` and `Cargo.lock`, commits, tags `v<version>` and pushes. `.github/workflows/release.yml` then builds the .deb, .rpm and AppImage (Ubuntu 22.04, `tauri-action`) and the Arch package (an `archlinux` container running `pnpm release:arch`) into a draft release, published by hand. The Arch package has its own concrete `.desktop` in `packaging/arch/`, separate from the Handlebars template used by .deb/.rpm. There's no in-app updater yet. Licensed AGPL-3.0-only (`LICENSE`), like the rest of the Cloudy series.
+**Releases.** `pnpm release:tag <version>` (`scripts/release-tag.mjs`) writes the version into `package.json`, `tauri.conf.json`, `Cargo.toml` and `Cargo.lock`, commits, tags `v<version>` and pushes. `.github/workflows/release.yml` then builds the Windows NSIS installer (`windows-latest`) and the .deb, .rpm and AppImage (Ubuntu 22.04), both with `tauri-action`, and the Arch package (an `archlinux` container running `pnpm release:arch`) into a draft release, published by hand. The Arch package has its own concrete `.desktop` in `packaging/arch/`, separate from the Handlebars template used by .deb/.rpm. There's no in-app updater yet. Licensed AGPL-3.0-only (`LICENSE`), like the rest of the Cloudy series.
 
 **Menus.** `menu` is generic and data-driven. `MenuList` is shared by the menu bar dropdowns and the portal-rendered `ContextMenu`, which keeps itself inside the viewport.
 

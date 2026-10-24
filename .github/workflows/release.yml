@@ -1,7 +1,7 @@
 # Builds a release when a version tag is pushed (`pnpm release:tag 0.2.0` pushes `v0.2.0`).
 #
-# Everything lands in a DRAFT release: the Ubuntu .deb, the .rpm, the AppImage and the Arch
-# package. Review it and publish it on GitHub.
+# Everything lands in a DRAFT release: the Windows installer, the Ubuntu .deb, the .rpm, the
+# AppImage and the Arch package. Review it and publish it on GitHub.
 name: Release
 
 on:
@@ -49,14 +49,25 @@ jobs:
           echo "id=$id" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build (Linux)
+    name: Build (${{ matrix.name }})
     needs: create-release
-    # The oldest supported Ubuntu, so the AppImage runs on more distros.
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            bundles: nsis
+          # The oldest supported Ubuntu, so the AppImage runs on more distros.
+          - name: Linux
+            os: ubuntu-22.04
+            bundles: deb,rpm,appimage
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Linux dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
@@ -85,7 +96,7 @@ jobs:
           NO_STRIP: "true"
         with:
           releaseId: ${{ needs.create-release.outputs.release-id }}
-          args: --bundles deb,rpm,appimage
+          args: --bundles ${{ matrix.bundles }}
 
   arch:
     name: Build (Arch Linux)

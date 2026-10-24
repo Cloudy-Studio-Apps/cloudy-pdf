@@ -27,7 +27,7 @@ Releases are built by GitHub Actions ([`.github/workflows/release.yml`](.github/
 pnpm release:tag 0.2.0   # writes the version, commits "Release v0.2.0", tags v0.2.0 and pushes
 ```
 
-The workflow builds the `.deb`, the `.rpm`, the AppImage and the Arch package into a **draft** release. Review the notes and press **Publish**.
+The workflow builds the Windows installer, the `.deb`, the `.rpm`, the AppImage and the Arch package into a **draft** release. Review the notes and press **Publish**.
 
 ## Architecture
 
