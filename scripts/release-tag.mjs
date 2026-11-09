@@ -1,6 +1,6 @@
 // Starts a release: `pnpm release:tag 0.2.0` writes the version everywhere it's kept, commits it,
 // tags it `v0.2.0` and pushes both. The tag starts `.github/workflows/release.yml`, which builds
-// every package into a draft release to review and publish on GitHub.
+// every package into a draft release and publishes it once every build passed.
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -43,7 +43,9 @@ git("commit", "-m", `Release ${tag}`);
 git("tag", "-a", tag, "-m", `Cloudy PDF ${tag}`);
 git("push", "origin", "master", tag);
 
-console.log(`Pushed ${tag}. GitHub Actions is building the draft release:`);
+console.log(
+  `Pushed ${tag}. GitHub Actions is building it, and publishes it once every build passed:`,
+);
 console.log("https://github.com/Cloudy-Studio-Apps/cloudy-pdf/actions");
 
 function fail(message) {
