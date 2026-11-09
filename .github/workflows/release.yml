@@ -1,10 +1,11 @@
 # Builds a release when a version tag is pushed (`pnpm release:tag 0.2.0` pushes `v0.2.0`).
 #
-# Everything lands in a DRAFT release: the Windows installer, the Ubuntu .deb, the .rpm, the AppImage, the Arch package, the updater signatures (`.sig`, which the
-# Cloudy Launcher checks before installing) and `latest.json`. Its description is GitHub's notes
-# generated from the commits since the last release. Once every build passed, `publish` publishes
-# it and the launcher offers the update; a failed build leaves the draft unpublished (re-run the
-# failed job: when it passes, the release is published).
+# Everything lands in a DRAFT release: the Windows installer, the Ubuntu .deb, the .rpm, the
+# AppImage, the Arch package, the updater signatures (`.sig`, which the Cloudy Launcher checks
+# before installing) and `latest.json`. Its description is GitHub's notes generated from the commits
+# since the last release. Once every build passed, `publish` publishes it and the launcher offers
+# the update; a failed build leaves the draft unpublished (re-run the failed job: when it passes,
+# the release is published).
 #
 # Needs the secrets TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 # (Cloudy-Studio-Apps organization secrets, the one key every Cloudy app signs with), which sign
